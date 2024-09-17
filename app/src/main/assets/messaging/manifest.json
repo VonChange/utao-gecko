@@ -11,7 +11,7 @@
     "content_scripts": [
       {
         "matches": ["*://*.qq.com/biu/u/*"],
-        "js": ["test.js"]
+        "js": ["testa.js","test.js"]
       }
     ],
     "permissions": [

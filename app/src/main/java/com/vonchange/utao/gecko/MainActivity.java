@@ -27,7 +27,7 @@ public class MainActivity extends Activity {
     private static GeckoRuntime sRuntime;
     private static  GeckoView view;
 
-    private static final String EXTENSION_LOCATION = "resource://android/assets/messaging/";
+    private static final String EXTENSION_LOCATION = "resource://android/assets/tv-web/";
     private static final String EXTENSION_ID = "utao@163.com";
     // If you make changes to the extension you need to update this
     private static final String EXTENSION_VERSION = "1.0";

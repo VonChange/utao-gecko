@@ -30,7 +30,8 @@ function _appInit(){
     xAppLoadJsHead("http://192.168.0.110:5500/qq/js/layer.js");
     xAppLoadJsHead("http://192.168.0.110:5500/qq/js/main.js");
 }
-_appInit()
-  //document.body.hidden=true;
- //document.body.hidden=true;
+//_appInit()
+//xAppLoadJsHead("resource://android/assets/messaging/testa.js");
+//console.log("111111111111xxxxx");
+document.body.hidden=false;
 //setTimeout("alert('对不起, 要你久候')", 3000 );
