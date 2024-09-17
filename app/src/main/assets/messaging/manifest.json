@@ -1,0 +1,22 @@
+{
+    "manifest_version": 2,
+    "name": "utao",
+    "version": "1.1.2",
+    "description": "utao tv",
+    "browser_specific_settings": {
+      "gecko": {
+        "id": "utao@163.com"
+      }
+    },
+    "content_scripts": [
+      {
+        "matches": ["*://*.qq.com/biu/u/*"],
+        "js": ["test.js"]
+      }
+    ],
+    "permissions": [
+      "nativeMessaging",
+      "nativeMessagingFromContent",
+      "geckoViewAddons"
+    ]
+  }

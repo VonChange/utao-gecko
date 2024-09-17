@@ -10,12 +10,16 @@ import android.view.WindowManager;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.mozilla.gecko.util.ThreadUtils;
 import org.mozilla.geckoview.AllowOrDeny;
 import org.mozilla.geckoview.GeckoResult;
 import org.mozilla.geckoview.GeckoRuntime;
 import org.mozilla.geckoview.GeckoSession;
 import org.mozilla.geckoview.GeckoSessionSettings;
 import org.mozilla.geckoview.GeckoView;
+import org.mozilla.geckoview.WebExtension;
 
 import java.util.List;
 
@@ -23,6 +27,10 @@ public class MainActivity extends Activity {
     private static GeckoRuntime sRuntime;
     private static  GeckoView view;
 
+    private static final String EXTENSION_LOCATION = "resource://android/assets/messaging/";
+    private static final String EXTENSION_ID = "utao@163.com";
+    // If you make changes to the extension you need to update this
+    private static final String EXTENSION_VERSION = "1.0";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -42,14 +50,22 @@ public class MainActivity extends Activity {
             // GeckoRuntime can only be initialized once per process
             sRuntime = GeckoRuntime.create(this);
         }
-
+        // Let's make sure the extension is installed
+        sRuntime
+                .getWebExtensionController()
+                .ensureBuiltIn(EXTENSION_LOCATION, EXTENSION_ID)
+                .accept(
+                        extension -> Log.i("MessageDelegate", "Extension installed: " + extension),
+                        e -> Log.e("MessageDelegate", "Error registering WebExtension", e)
+                );
         session.open(sRuntime);
         view.setSession(session);
         //https://tv.cctv.com/live/cctv1/ about:buildconfig
         //https://www.ixigua.com/7405917477189714469?logTag=2701e1cad4c007fe299
         //https://www.yangshipin.cn/tv/home?pid=600002475
-        //file://android_asset/index.html
-        session.loadUri("resource://android/assets/tv-web/index.html"); // Or any other URL...
+        //file://android_asset/index.html resource://android/assets/tv-web/index.html
+        //https://v.qq.com/biu/u/history
+        session.loadUri("https://v.qq.com/biu/u/history"); // Or any other URL...
     }
 
     private static @NonNull GeckoSession getGeckoSession() {
