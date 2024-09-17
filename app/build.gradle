@@ -1,0 +1,50 @@
+plugins {
+    alias(libs.plugins.android.application)
+}
+//ext {
+//    geckoviewChannel = ""
+//    geckoviewVersion = "129.0.20240819150008"
+//            //"120.0.20231006092133"
+//}
+//ext {
+//    geckoviewChannel = "-nightly"
+//    geckoviewVersion = "70.0.20190712095934"
+//}
+ext{
+    geckoviewChannel = ""
+    geckoviewVersion = "89.0.20210614221319"
+}
+android {
+    namespace 'com.vonchange.utao.gecko'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.vonchange.utao.gecko"
+        minSdk 16
+        targetSdk 34
+        versionCode 1
+        versionName "1.0"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+}
+
+dependencies {
+    implementation "org.mozilla.geckoview:geckoview${geckoviewChannel}:${geckoviewVersion}"
+    //implementation libs.appcompat
+   // implementation libs.material
+    testImplementation libs.junit
+    //androidTestImplementation libs.ext.junit
+   // androidTestImplementation libs.espresso.core
+}
