@@ -73,6 +73,7 @@ public class MainActivity extends Activity {
             public void onAndroidPermissionsRequest(@NonNull GeckoSession session, @Nullable String[] permissions, @NonNull Callback callback) {
                 Log.i("gecko", "AndroidPermission Permission Needed"+permissions.toString());
                 callback.grant();
+                //
                 //GeckoSession.PermissionDelegate.super.onAndroidPermissionsRequest(session, permissions, callback);
             }
         });
