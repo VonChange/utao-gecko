@@ -7,8 +7,6 @@ import android.view.Window;
 import android.view.WindowManager;
 
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -27,7 +25,7 @@ public class MainActivity extends Activity {
     private static GeckoRuntime sRuntime;
     private static  GeckoView view;
 
-    private static final String EXTENSION_LOCATION = "resource://android/assets/tv-web/";
+    private static final String EXTENSION_LOCATION = "resource://android/assets/messaging/";
     private static final String EXTENSION_ID = "utao@163.com";
     // If you make changes to the extension you need to update this
     private static final String EXTENSION_VERSION = "1.0";
@@ -68,25 +66,25 @@ public class MainActivity extends Activity {
         session.loadUri("https://v.qq.com/biu/u/history"); // Or any other URL...
     }
 
-    private static @NonNull GeckoSession getGeckoSession() {
+    private static  GeckoSession getGeckoSession() {
         GeckoSession session = new GeckoSession();
         session.setPermissionDelegate(new GeckoSession.PermissionDelegate() {
             @Override
-            public void onMediaPermissionRequest(@NonNull GeckoSession session, @NonNull String uri, @Nullable MediaSource[] video, @Nullable MediaSource[] audio, @NonNull MediaCallback callback) {
+            public void onMediaPermissionRequest( GeckoSession session,  String uri,  MediaSource[] video,  MediaSource[] audio,  MediaCallback callback) {
                 Log.i("gecko", "Media Permission Needed"+uri);
                 GeckoSession.PermissionDelegate.super.onMediaPermissionRequest(session, uri, video, audio, callback);
                 //callback.grant(null, audio[MediaSource.TYPE_VIDEO]);
             }
 
-            @Override
-            public void onContentPermissionRequest(@NonNull GeckoSession session, @Nullable String uri, int type, @NonNull Callback callback) {
+           // @Override
+            public void onContentPermissionRequest(GeckoSession session,  String uri, int type,  Callback callback) {
                 Log.i("gecko", "nContentPermission Permission Needed "+type+uri);
                 callback.grant();
                // GeckoSession.PermissionDelegate.super.onContentPermissionRequest(session, uri, type, callback);
             }
 
             @Override
-            public void onAndroidPermissionsRequest(@NonNull GeckoSession session, @Nullable String[] permissions, @NonNull Callback callback) {
+            public void onAndroidPermissionsRequest( GeckoSession session,  String[] permissions,  Callback callback) {
                 Log.i("gecko", "AndroidPermission Permission Needed"+permissions.toString());
                 callback.grant();
                 //
