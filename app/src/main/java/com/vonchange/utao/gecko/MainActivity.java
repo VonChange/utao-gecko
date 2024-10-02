@@ -66,22 +66,17 @@ public class MainActivity extends Activity {
                 //.setExtensionsProcessEnabled(true)
                 //.setExtensionsWebAPIEnabled(true);
         // Let's make sure the extension is installed
-        WebExtension.MessageDelegate messageDelegate= initMessage();
+        //WebExtension.MessageDelegate messageDelegate= initMessage();
         sRuntime
                 .getWebExtensionController()
                 .ensureBuiltIn(EXTENSION_LOCATION, EXTENSION_ID)
                 .accept(
-                        extension -> extension.setMessageDelegate(messageDelegate, "browser"),
+                        extension -> Log.i("MessageDelegate", "Extension installed: " + extension),
                         e -> Log.e("MessageDelegate", "Error registering WebExtension", e)
                 );
         session.open(sRuntime);
         view.setSession(session);
-       /* view.setOnKeyListener(new View.OnKeyListener() {
-            @Override
-            public boolean onKey(View v, int keyCode, KeyEvent event) {
-                return keyDown(v,keyCode,event);
-            }
-        });*/
+        //extension.setMessageDelegate(messageDelegate, "browser"),
         //https://tv.cctv.com/live/cctv1/ about:buildconfig
         //https://www.ixigua.com/7405917477189714469?logTag=2701e1cad4c007fe299
         //https://www.yangshipin.cn/tv/home?pid=600002475
@@ -123,37 +118,7 @@ public class MainActivity extends Activity {
         return super.dispatchKeyEvent(event);
     }
 
-    /*private boolean keyDown(View v, int keyCode, KeyEvent event){
-        //按下
-        if (event.getAction() == KeyEvent.ACTION_DOWN) {
-            Log.i("keyDown", "keyDown"+keyCode);
-            //onKeyEvent(KeyEvent.KEYCODE_D);
-            switch (keyCode){
-                case KeyEvent.KEYCODE_DPAD_RIGHT:
-                    onKeyEvent(KeyEvent.KEYCODE_D);
-                    break;
-                default:
-                    super.dispatchKeyEvent(event);
-                    break;
-            }
-            return true;
-          *//*  if(null!=mPort){
-               // mPort.postMessage(msg(event));
-                return true;
-            }*//*
-     *//*           switch(keyCode){
-                case KeyEvent.KEYCODE_BACK:
-                    mPort.postMessage(msg(event));
-                    break;
-                case KeyEvent.KEYCODE_DPAD_UP:
-                    mPort.postMessage(msg(event));
-                    break;
-                default:
-                    return super.dispatchKeyEvent(event);
-            }*//*
-        }
-        return true;
-    }*/
+
     private JSONObject msg(KeyEvent event){
 
         JSONObject message = new JSONObject();
