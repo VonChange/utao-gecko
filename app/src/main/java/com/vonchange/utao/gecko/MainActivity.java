@@ -15,9 +15,6 @@ import android.view.Window;
 import android.view.WindowManager;
 
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.mozilla.geckoview.GeckoResult;
@@ -105,6 +102,9 @@ public class MainActivity extends Activity {
                 case KeyEvent.KEYCODE_DPAD_UP:
                     onKeyEvent(KeyEvent.KEYCODE_W);
                     break;
+                case KeyEvent.KEYCODE_BACK:
+                    onKeyEvent(KeyEvent.KEYCODE_Q);
+                    break;
                 case KeyEvent.KEYCODE_MENU:
                     onKeyEvent(KeyEvent.KEYCODE_R);
                     break;
@@ -150,8 +150,8 @@ public class MainActivity extends Activity {
         WebExtension.PortDelegate portDelegate = new WebExtension.PortDelegate() {
             public WebExtension.Port port = null;
 
-            public void onPortMessage(final @NonNull Object message,
-                                      final @NonNull WebExtension.Port port) {
+            public void onPortMessage(final  Object message,
+                                      final WebExtension.Port port) {
                 // This method will be called every time a message is sent from the
                 // extension through this port. For now, let's just log a
                 // message.
@@ -159,7 +159,7 @@ public class MainActivity extends Activity {
                         + message);
             }
 
-            public void onDisconnect(final @NonNull WebExtension.Port port) {
+            public void onDisconnect(final  WebExtension.Port port) {
                 // After this method is called, this port is not usable anymore.
                 if (port == mPort) {
                     mPort = null;
@@ -170,8 +170,8 @@ public class MainActivity extends Activity {
         // This delegate will handle requests to open a port coming from the
         // extension
         WebExtension.MessageDelegate messageDelegate = new WebExtension.MessageDelegate() {
-            @Nullable
-            public void onConnect(final @NonNull WebExtension.Port port) {
+
+            public void onConnect(final  WebExtension.Port port) {
                 // Let's store the Port object in a member variable so it can be
                 // used later to exchange messages with the WebExtension.
                 mPort = port;
@@ -194,18 +194,18 @@ public class MainActivity extends Activity {
                 //callback.grant(null, audio[MediaSource.TYPE_VIDEO]);
             }
 
-        /*    @Override
+            @Override
             public GeckoResult<Integer> onContentPermissionRequest(GeckoSession session, ContentPermission contentPermission ) {//String uri, int type,  Callback callback
                 Log.i("gecko", "nContentPermission Permission Needed "+contentPermission.uri+" "+contentPermission.permission);
                // callback.grant();
                // GeckoSession.PermissionDelegate.super.onContentPermissionRequest(session, uri, type, callback);
                return GeckoResult.fromValue(ContentPermission.VALUE_ALLOW);
-            }*/
-            @Override
+            }
+            /*@Override
             public void onContentPermissionRequest(GeckoSession session, String uri, int type,  Callback callback ) {
               Log.i("gecko", "nContentPermission Permission Needed "+uri+" "+type);
                 callback.grant();
-            }
+            }*/
             @Override
             public void onAndroidPermissionsRequest( GeckoSession session,  String[] permissions,  Callback callback) {
                 Log.i("gecko", "AndroidPermission Permission Needed"+permissions.toString());
