@@ -1,36 +1,47 @@
 plugins {
     alias(libs.plugins.android.application)
 }
-//ext {
-//    geckoviewChannel = ""
-//    geckoviewVersion = "129.0.20240819150008"
-//            //"120.0.20231006092133"
-//}
-//ext {
-//    geckoviewChannel = "-nightly"
-//    geckoviewVersion = "70.0.20190712095934"
-//}
 ext{
     geckoviewChannel = ""
-    //99.0.20220411174855 89.0.20210614221319(可自动播放) 109.0.20230127170202
-    //115.0.20230726201356 117.0.20230912013654 118.0.20231009140911(自动播放问题)
-    //119.0.20231108221453(21)  119.0.20231016204538(21)
+    //79.0.20200813192915 89.0.20210614221319(可自动播放16 声音自动) 99.0.20220411174855  109.0.20230127170202
+    //115.0.20230726201356 117.0.20230912013654 118.0.20231009140911(自动播放Override不一样 最高4.1)
+    //119.0.20231108221453(21)  119.0.20231016204538(21) 130.0.20240913135723
     geckoviewVersion = "118.0.20231009140911"
+    rxhttp_version = "3.2.6"
+    okhttp_version = "3.12.13"
+    room_version = "2.6.1"
 }
 android {
     namespace 'com.vonchange.utao.gecko'
     compileSdk 34
 
     defaultConfig {
+        multiDexEnabled true
         applicationId "com.vonchange.utao.gecko"
-        minSdk 16
-        targetSdk 34
-        versionCode 1
-        versionName "1.0"
+        minSdk 17
+        //noinspection ExpiredTargetSdkVersion
+        targetSdk 28
+        versionCode 4
+        versionName "2024年10月13日早"
         ndk {
-            abiFilters "armeabi-v7a","arm64-v8a" // arm64-v8a、armeabi-v7a、x86_64、x86 中的一个或多个
+            abiFilters "armeabi-v7a","x86"//"armeabi-v7a","x86" arm64-v8a ""armeabi-v7a"// arm64-v8a、armeabi-v7a、x86_64、x86 中的一个或多个
         }
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        javaCompileOptions {
+            annotationProcessorOptions {
+                arguments += [
+                        "room.schemaLocation"  : "$projectDir/schemas".toString(),
+                        "room.incremental"     : "true",
+                        "room.expandProjection": "true"]
+                /*
+                Room 具有以下注释处理器选项：
+                room.schemaLocation：配置并启用将数据库架构导出到给定目录中的 JSON 文件的功能。
+                                    [创建好表和数据库后编译，会在 app/schemas 目录下生成这个 JSON 文件]
+                room.incremental：启用 Gradle 增量注释处理器。
+                room.expandProjection：配置 Room 以重写查询，使其顶部星形投影在展开后仅包含 DAO 方法返回类型中定义的列。
+                */
+            }
+        }
     }
 
     buildTypes {
@@ -43,10 +54,26 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
+    buildFeatures {
+        viewBinding true
+    }
+    android.applicationVariants.all {
+        variant ->
+            variant.outputs.all {
+                // 此处指定生成的apk文件名
+                outputFileName = "utao.apk"
+            }
+    }
 }
 
 dependencies {
+    implementation 'androidx.leanback:leanback:1.0.0'
     implementation "org.mozilla.geckoview:geckoview${geckoviewChannel}:${geckoviewVersion}"
+    implementation "androidx.room:room-runtime:$room_version"
+    annotationProcessor "androidx.room:room-compiler:$room_version"
+    implementation 'com.google.code.gson:gson:2.8.9'
+    implementation "com.squareup.okhttp3:okhttp:$okhttp_version"
+    implementation 'androidx.multidex:multidex:2.0.1'
     //implementation libs.appcompat
    // implementation libs.material
     testImplementation libs.junit
