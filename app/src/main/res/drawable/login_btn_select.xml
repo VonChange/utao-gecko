@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector
+xmlns:android="http://schemas.android.com/apk/res/android">
+
+  <!--  <item android:drawable="@drawable/btnsel" android:st="true"/>-->
+<!--获得焦点时的样式-->
+<item android:drawable="@drawable/btnsel" android:state_focused="true"/>
+<!--没获得焦点时的样式-->
+<item android:drawable="@drawable/btnshape" android:state_focused="false"/>
+</selector>
+

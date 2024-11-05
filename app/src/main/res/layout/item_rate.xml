@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <data>
+
+        <variable
+            name="itemPresenter"
+            type="com.vonchange.utao.gecko.event.EventBlind.RateBindPresenter" />
+
+        <variable
+            name="item"
+            type="com.vonchange.utao.gecko.domain.RateItem" />
+    </data>
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+
+        <Button
+            android:id="@+id/rateItem"
+            android:text="@{item.name}"
+            android:tag="rateItem"
+            android:textSize="@dimen/fontDefault"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/login_btn_select"
+            android:focusable="true"
+            android:layout_margin="8dp" />
+    </LinearLayout>
+</layout>

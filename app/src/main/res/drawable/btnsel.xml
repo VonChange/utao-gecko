@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <solid android:color="#16baaa"/>
+    <corners android:radius="13dp"/>
+    <stroke android:width="3dp" android:color="@color/white"/>
+    <gradient
+        android:angle="0"
+        android:endColor="@color/green_end"
+        android:startColor="@color/green_start" />
+    <!--圆角矩形白色背景-->
+</shape>

@@ -1,3 +1,9 @@
 <resources>
     <string name="app_name">gecko</string>
+    <string name="hz">画质</string>
+    <string name="rate">倍数</string>
+    <string name="next">下一集</string>
+    <string name="xj">选集</string>
+    <string name="font">30sp</string>
+    <string name="kong"> </string>
 </resources>
