@@ -26,6 +26,7 @@
             android:layout_height="wrap_content"
             android:background="@drawable/login_btn_select"
             android:focusable="true"
-            android:layout_margin="8dp" />
+            android:padding="8dp"
+            android:layout_margin="8dp"/>
     </LinearLayout>
 </layout>

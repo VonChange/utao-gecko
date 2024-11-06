@@ -24,12 +24,15 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:padding="8dp"
             android:layout_margin="8dp">
-
+            <LinearLayout
+                android:layout_weight="1"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content">
             <Button
                 style="?android:attr/button"
-                android:layout_weight="1"
                 android:id="@+id/hzBtn"
                 android:textSize="@dimen/fontDefault"
                 android:tag="menu_hz"
@@ -37,54 +40,69 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:focusable="true"
-                android:layout_marginLeft="8dp"
-                android:layout_marginRight="8dp"
+                android:layout_margin="8dp"
                 android:background="@drawable/login_btn_select"
                 android:padding="8dp" />
-
-            <Button
+            </LinearLayout>
+            <LinearLayout
                 android:layout_weight="1"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:layout_width="wrap_content"
+                android:visibility="@{(menu.xjs.size>0&amp;&amp;(menu.now.xj.index+1)&lt;menu.xjs.size)?View.VISIBLE:View.GONE}"
+                android:layout_height="wrap_content">
+            <Button
                 android:id="@+id/nextBtn"
                 android:tag="menu_next"
                 android:text="@string/next"
                 android:textSize="@dimen/fontDefault"
-                android:layout_marginLeft="8dp"
-                android:layout_marginRight="8dp"
+                android:layout_margin="8dp"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:background="@drawable/login_btn_select"
                 android:focusable="true"
                 android:padding="8dp" />
-
+            </LinearLayout>
+            <LinearLayout
+                android:layout_weight="1"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:layout_width="wrap_content"
+                android:visibility="@{menu.rates.size>0?View.VISIBLE:View.GONE}"
+                android:layout_height="wrap_content">
             <Button
                 style="?android:attr/button"
-                android:layout_weight="1"
                 android:id="@+id/rateBtn"
                 android:tag="menu_rate"
                 android:textSize="@dimen/fontDefault"
                 android:text="@{@string/rate+menu.now.rate.name}"
-                android:layout_marginLeft="8dp"
-                android:layout_marginRight="8dp"
+                android:layout_margin="8dp"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:background="@drawable/login_btn_select"
                 android:focusable="true"
                 android:padding="8dp" />
-
+            </LinearLayout>
+            <LinearLayout
+                android:layout_weight="1"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:visibility="@{menu.xjs.size>0?View.VISIBLE:View.GONE}"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content">
             <Button
                 style="?android:attr/button"
-                android:layout_weight="1"
                 android:id="@+id/xjBtn"
                 android:tag="menu_xj"
                 android:textSize="@dimen/fontDefault"
                 android:text="@string/xj"
-                android:layout_marginLeft="8dp"
-                android:layout_marginRight="8dp"
+                android:layout_margin="8dp"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:background="@drawable/login_btn_select"
                 android:focusable="true"
                 android:padding="8dp" />
+            </LinearLayout>
         </LinearLayout>
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/xjs_view"

@@ -23,10 +23,11 @@
             android:tag="xjItem"
             android:text="@{item.title+@string/kong+item.remark}"
             android:layout_width="match_parent"
-            android:layout_height="200dp"
+            android:layout_height="wrap_content"
             android:background="@drawable/login_btn_select"
             android:focusable="true"
             android:onClick="@{() -> itemPresenter.onClick(item)}"
-            android:layout_margin="8dp" />
+            android:padding="8dp"
+            android:layout_margin="8dp"/>
     </LinearLayout>
 </layout>

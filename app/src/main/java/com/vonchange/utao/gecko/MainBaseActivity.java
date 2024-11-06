@@ -4,8 +4,30 @@ import android.app.Activity;
 import android.content.pm.ActivityInfo;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.view.ViewTreeObserver;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.Button;
+import android.widget.LinearLayout;
+
+import androidx.databinding.DataBindingUtil;
+import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.vonchange.utao.gecko.databinding.ActivityMainBinding;
+import com.vonchange.utao.gecko.databinding.ItemHzBinding;
+import com.vonchange.utao.gecko.databinding.ItemRateBinding;
+import com.vonchange.utao.gecko.databinding.ItemXjBinding;
+import com.vonchange.utao.gecko.domain.DetailMenu;
+import com.vonchange.utao.gecko.domain.HzItem;
+import com.vonchange.utao.gecko.domain.RateItem;
+import com.vonchange.utao.gecko.domain.XjItem;
+import com.vonchange.utao.gecko.event.EventBlind;
+import com.vonchange.utao.gecko.impl.BaseBindingAdapter;
+import com.vonchange.utao.gecko.impl.BaseViewHolder;
+import com.vonchange.utao.gecko.util.JsonUtil;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -17,20 +39,21 @@ import org.mozilla.geckoview.GeckoSessionSettings;
 import org.mozilla.geckoview.GeckoView;
 import org.mozilla.geckoview.WebExtension;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class MainBaseActivity extends Activity {
 
     private static String TAG="MainBaseActivity";
     private static GeckoView view;
-
     private static GeckoRuntime sRuntime;
     public static GeckoSession session;
-   // private WebExtension webExtension;
     private static final String EXTENSION_LOCATION = "resource://android/assets/tv-web/";
     private static final String EXTENSION_ID = "utao@163.com";
     // If you make changes to the extension you need to update this
     private static final String EXTENSION_VERSION = "1.0";
     private  static WebExtension.Port webPort;
-
+    protected ActivityMainBinding binding;
     //@SuppressLint("WrongThread")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,18 +61,28 @@ public class MainBaseActivity extends Activity {
         requestWindowFeature(Window.FEATURE_NO_TITLE);//隐藏标题栏
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
-        setContentView(R.layout.activity_main);
-        view = findViewById(R.id.geckoview);
+        //setContentView(R.layout.activity_main);
+        binding = DataBindingUtil.setContentView(this, R.layout.activity_main);
+        bind();
+        view = binding.geckoview;
         preInitWebView();
         session.setNavigationDelegate(new NextPlusNavigationDelegate(this));
-
-        //NextPlusNavigationDelegate navigation = new NextPlusNavigationDelegate(this);
         view.setSession(session);
         //extension.setMessageDelegate(messageDelegate, "browser"),
         //file://android_asset/index.html resource://android/assets/tv-web/index.html
-        //resource://android/assets/tv-web/
-        Log.i(TAG,"loadUriloadUriloadUri");
        // session.loadUri(webExtension.metaData.baseUrl+"index.html"); // Or any other URL...
+    }
+    private void bind(){
+        binding = DataBindingUtil.setContentView(this, R.layout.activity_main);
+        xjBlind(new ArrayList<>());
+        hzBind(new ArrayList<>());
+        rateBind(new ArrayList<>());
+        binding.hzBtn.requestFocus();
+        DetailMenu detailMenu2 = JsonUtil.fromJson(TestActivity.json,DetailMenu.class);
+        detailMenu2.getNow().getXj().setIndex(20);
+        binding.setMenu(detailMenu2);
+        focusChange();
+        binding.tvMenu.setVisibility(View.VISIBLE);
     }
 
 
@@ -217,4 +250,153 @@ public class MainBaseActivity extends Activity {
 
         return session;
     }
+
+    //菜单
+    private Button defaultFocusBtn(View oldFocus, View newFocus){
+        if(!(newFocus instanceof Button)){
+            return null;
+        }
+        if(null!=oldFocus){  oldFocus.setScaleX(1.0f); oldFocus.setScaleY(1.0f);}
+        newFocus.setScaleX(1.1f);
+        newFocus.setScaleY(1.1f);
+        return (Button) newFocus;
+
+    }
+    private String  oldBtnTag(View oldFocus){
+        if(!(oldFocus instanceof Button)){
+            return null;
+        }
+        Object tagObj=oldFocus.getTag();
+        if(null==tagObj){return null;}
+        return  tagObj.toString();
+    }
+    private void focusChange() {
+        View view = binding.tvMenu;
+        view.getViewTreeObserver().addOnGlobalFocusChangeListener(new ViewTreeObserver.OnGlobalFocusChangeListener() {
+            @Override
+            public void onGlobalFocusChanged(View oldFocus, View newFocus) {
+                Log.d(TAG, "onGlobalFocusChanged: oldFocus=" + oldFocus);
+                Log.d(TAG, "onGlobalFocusChanged: newFocus=" + newFocus);
+                Button focusBtn=defaultFocusBtn(oldFocus,newFocus);
+                if(null==focusBtn){return;}
+                Object tagObj=focusBtn.getTag();
+                if(null==tagObj){return;}
+                String tag= tagObj.toString();
+                Log.d(TAG, "onGlobalFocusChanged: newFocus=" + tag);
+                if(tag.startsWith("menu_")){
+                    tag=tag.substring(5);
+                    binding.getMenu().setTab(tag);
+                }
+                String oldTag=null;
+                switch (tag){
+                    case "hzItem":
+                        focusBtn.setNextFocusUpId(R.id.hzBtn);
+                        oldTag=oldBtnTag(oldFocus);
+                        if(null!=oldTag){
+                            if(oldTag.equals("menu_hz")){
+                                RecyclerView.ViewHolder viewHolder = binding.hzsView.findViewHolderForLayoutPosition(0);
+                                if(null!=viewHolder){
+                                    viewHolder.itemView.requestFocus();
+                                }
+                            }
+                        }
+                        break;
+                    case "rateItem":
+                        focusBtn.setNextFocusUpId(R.id.rateBtn);
+                        oldTag=oldBtnTag(oldFocus);
+                        if(null!=oldTag){
+                            if(oldTag.equals("menu_rate")){
+                                RecyclerView.ViewHolder viewHolder = binding.ratesView.findViewHolderForLayoutPosition(0);
+                                if(null!=viewHolder){
+                                    viewHolder.itemView.requestFocus();
+                                }
+                            }
+                        }
+                        break;
+                    case "xjItem":
+                        LinearLayout layout = (LinearLayout) focusBtn.getParent();
+                        RecyclerView.LayoutParams params = (RecyclerView.LayoutParams) layout.getLayoutParams();
+                        int itemPosition = params.getViewLayoutPosition();
+                        if(itemPosition<6){
+                            focusBtn.setNextFocusUpId(R.id.xjBtn);
+                        }
+                        Log.d(TAG, "xjItem: index=" + itemPosition);
+                        oldTag=oldBtnTag(oldFocus);
+                        if(null!=oldTag){
+                            //old上一个是选集btn 下一个是item 自动选择
+                            if(oldTag.equals("menu_xj")){
+                                int id =  binding.xjsView.getLayoutManager().getItemCount();
+                                Log.i(TAG,"count "+ id+" "+ binding.xjsView.getChildCount()+" "+binding.xjsView.getAdapter().getItemCount());
+                                int viewCount= binding.xjsView.getChildCount();
+                                int num=binding.getMenu().getNow().getXj().getIndex();
+                                if(num>viewCount){
+                                    num=viewCount-1;
+                                }
+                                RecyclerView.ViewHolder viewHolder = binding.xjsView.findViewHolderForLayoutPosition(num);
+                                if(null!=viewHolder){
+                                    viewHolder.itemView.requestFocus();
+                                }
+                            }
+                        }
+                        break;
+                    default:
+                        Log.i(TAG,"setTab"+tag);
+                        break;
+                }
+            }
+        });
+    }
+
+    private void xjBlind(List<XjItem> xjItems){
+        BaseBindingAdapter xjAdapter = new BaseBindingAdapter<XjItem, ItemXjBinding>(xjItems,R.layout.item_xj) {
+            @Override
+            public void doBindViewHolder(BaseViewHolder<ItemXjBinding> holder, XjItem item) {
+                holder.getBinding().setVariable(BR.item, item);
+                holder.getBinding().setVariable(BR.itemPresenter, ItemPresenter);
+            }
+        };
+        xjAdapter.setItemPresenter(new EventBlind.XjBindPresenter());
+        binding.xjsView
+                .setLayoutManager(new GridLayoutManager(this, 6));
+        binding.xjsView
+                .setAdapter(xjAdapter);
+    }
+    private void hzBind(List<HzItem> hzItems){
+        BaseBindingAdapter hzAdapter = new BaseBindingAdapter<HzItem, ItemHzBinding>(hzItems,R.layout.item_hz) {
+            @Override
+            public void doBindViewHolder(BaseViewHolder<ItemHzBinding> holder, HzItem item) {
+                holder.getBinding().setVariable(BR.item, item);
+                holder.getBinding().setVariable(BR.itemPresenter, ItemPresenter);
+            }
+        };
+        hzAdapter.setItemPresenter(new EventBlind.HzBindPresenter());
+        binding.hzsView
+                .setLayoutManager(new LinearLayoutManager(this,LinearLayoutManager.HORIZONTAL,false));
+        binding.hzsView
+                .setAdapter(hzAdapter);
+    }
+
+    private void rateBind(List<RateItem> rateItems){
+        BaseBindingAdapter rateAdapter = new BaseBindingAdapter<RateItem, ItemRateBinding>(rateItems,R.layout.item_rate) {
+            @Override
+            public void doBindViewHolder(BaseViewHolder<ItemRateBinding> holder, RateItem item) {
+                holder.getBinding().setVariable(BR.item, item);
+                holder.getBinding().setVariable(BR.itemPresenter, ItemPresenter);
+            }
+        };
+        rateAdapter.setItemPresenter(new EventBlind.RateBindPresenter());
+        binding.ratesView
+                .setLayoutManager(new LinearLayoutManager(this,LinearLayoutManager.HORIZONTAL,false));
+        binding.ratesView
+                .setAdapter(rateAdapter);
+
+    }
+
+    public class MenuHandler {
+
+        public void tabFocus() {
+
+        }
+    }
+
 }

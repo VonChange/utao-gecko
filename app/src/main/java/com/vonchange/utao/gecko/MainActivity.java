@@ -1,6 +1,5 @@
 package com.vonchange.utao.gecko;
 
-import android.annotation.SuppressLint;
 import android.app.Instrumentation;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -75,7 +74,7 @@ public class MainActivity extends MainBaseActivity {
         return true;
     }
 
-    @SuppressLint("RestrictedApi")
+/*    @SuppressLint("RestrictedApi")
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
         if(event.getAction() == KeyEvent.ACTION_UP){
@@ -129,7 +128,7 @@ public class MainActivity extends MainBaseActivity {
             return true;
         }
         return super.dispatchKeyEvent(event);
-    }
+    }*/
 
     private static Instrumentation inst = new Instrumentation();
 
