@@ -5,7 +5,7 @@
 
         <variable
             name="itemPresenter"
-            type="com.vonchange.utao.gecko.event.EventBlind.RateBindPresenter" />
+            type="com.vonchange.utao.gecko.MainBaseActivity.RateBindPresenter" />
 
         <variable
             name="item"
@@ -26,6 +26,7 @@
             android:layout_height="wrap_content"
             android:background="@drawable/login_btn_select"
             android:focusable="true"
+            android:onClick="@{() -> itemPresenter.onClick(item)}"
             android:padding="8dp"
             android:layout_margin="8dp"/>
     </LinearLayout>

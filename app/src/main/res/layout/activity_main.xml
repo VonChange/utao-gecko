@@ -9,6 +9,9 @@
             name="menu"
             type="DetailMenu"/>
         <import type="android.view.View" />
+        <variable
+            name="menuTitleHandler"
+            type="com.vonchange.utao.gecko.MainBaseActivity.MenuTitleHandler" />
     </data>
     <FrameLayout
         android:id="@+id/webViewContainer"
@@ -18,17 +21,18 @@
             android:id="@+id/geckoview"
             android:layout_width="fill_parent"
             android:visibility="visible"
-            android:focusable="false"
-            android:layout_height="fill_parent" />
+            android:focusable="true"
+            android:focusableInTouchMode="false"
+            android:layout_height="fill_parent"/>
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:background="#00000000"
             android:orientation="vertical"
-            android:id="@+id/tvMenu"
+            android:clickable="true"
+            android:focusable="true"
             android:visibility="gone"
-            tools:context=".MainActivity">
-
+            android:id="@+id/tvMenu">
             <LinearLayout
                 android:id="@+id/tvMenuTitle"
                 style="?android:attr/buttonBarStyle"
@@ -36,6 +40,48 @@
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:layout_margin="8dp">
+                <LinearLayout
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:visibility="visible"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content">
+                    <Button
+                        style="?android:attr/button"
+                        android:id="@+id/xjBtn"
+                        android:tag="menu_xj"
+                        android:textSize="@dimen/fontDefault"
+                        android:text="@{menu.video?@string/xj:@string/zb}"
+                        android:layout_margin="8dp"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/login_btn_select"
+                        android:focusable="true"
+                        android:padding="8dp" />
+                </LinearLayout>
+                <LinearLayout
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:layout_width="wrap_content"
+                    android:visibility="@{(menu.video&amp;&amp;menu.xjs.size>0&amp;&amp;(menu.now.xj.index+1)&lt;menu.xjs.size)?View.VISIBLE:View.GONE}"
+                    android:layout_height="wrap_content">
+                    <Button
+                        android:id="@+id/nextBtn"
+                        android:tag="menu_next"
+                        android:text="@string/next"
+                        android:onClick="@{()->menuTitleHandler.nextBtn()}"
+
+                        android:textSize="@dimen/fontDefault"
+
+                        android:layout_margin="8dp"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/login_btn_select"
+                        android:focusable="true"
+                        android:padding="8dp" />
+                </LinearLayout>
                 <LinearLayout
                     android:layout_weight="1"
                     android:gravity="center"
@@ -52,28 +98,11 @@
                         android:layout_height="wrap_content"
                         android:focusable="true"
                         android:layout_margin="8dp"
+                        android:visibility="visible"
                         android:background="@drawable/login_btn_select"
                         android:padding="8dp" />
                 </LinearLayout>
-                <LinearLayout
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:orientation="vertical"
-                    android:layout_width="wrap_content"
-                    android:visibility="@{(menu.xjs.size>0&amp;&amp;(menu.now.xj.index+1)&lt;menu.xjs.size)?View.VISIBLE:View.GONE}"
-                    android:layout_height="wrap_content">
-                    <Button
-                        android:id="@+id/nextBtn"
-                        android:tag="menu_next"
-                        android:text="@string/next"
-                        android:textSize="@dimen/fontDefault"
-                        android:layout_margin="8dp"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:background="@drawable/login_btn_select"
-                        android:focusable="true"
-                        android:padding="8dp" />
-                </LinearLayout>
+
                 <LinearLayout
                     android:layout_weight="1"
                     android:gravity="center"
@@ -94,43 +123,26 @@
                         android:focusable="true"
                         android:padding="8dp" />
                 </LinearLayout>
-                <LinearLayout
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:orientation="vertical"
-                    android:visibility="@{menu.xjs.size>0?View.VISIBLE:View.GONE}"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content">
-                    <Button
-                        style="?android:attr/button"
-                        android:id="@+id/xjBtn"
-                        android:tag="menu_xj"
-                        android:textSize="@dimen/fontDefault"
-                        android:text="@string/xj"
-                        android:layout_margin="8dp"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:background="@drawable/login_btn_select"
-                        android:focusable="true"
-                        android:padding="8dp" />
-                </LinearLayout>
+
             </LinearLayout>
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/xjs_view"
-                android:visibility="@{menu.tab.equals(`xj`)?View.VISIBLE:View.GONE}"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"/>
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/hzs_view"
                 android:visibility="@{menu.tab.equals(`hz`)?View.VISIBLE:View.GONE}"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"/>
             <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/xjs_view"
+                android:visibility="@{menu.tab.equals(`xj`)?View.VISIBLE:View.GONE}"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"/>
+
+            <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rates_view"
                 android:visibility="@{menu.tab.equals(`rate`)?View.VISIBLE:View.GONE}"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"/>
         </LinearLayout>
+
     </FrameLayout>
 
 

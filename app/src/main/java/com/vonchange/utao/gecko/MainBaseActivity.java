@@ -24,9 +24,9 @@ import com.vonchange.utao.gecko.domain.DetailMenu;
 import com.vonchange.utao.gecko.domain.HzItem;
 import com.vonchange.utao.gecko.domain.RateItem;
 import com.vonchange.utao.gecko.domain.XjItem;
-import com.vonchange.utao.gecko.event.EventBlind;
 import com.vonchange.utao.gecko.impl.BaseBindingAdapter;
 import com.vonchange.utao.gecko.impl.BaseViewHolder;
+import com.vonchange.utao.gecko.impl.IBaseBindingPresenter;
 import com.vonchange.utao.gecko.util.JsonUtil;
 
 import org.json.JSONException;
@@ -39,11 +39,10 @@ import org.mozilla.geckoview.GeckoSessionSettings;
 import org.mozilla.geckoview.GeckoView;
 import org.mozilla.geckoview.WebExtension;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class MainBaseActivity extends Activity {
-
+    private static  final String json="{\"now\":{\"play\":{\"enabled\":false,\"play\":true,\"btn\":\"暂停\"},\"rate\":{\"id\":\"3\",\"name\":\"正常\",\"isCurrent\":true},\"hz\":{\"id\":\"0\",\"name\":\"超清\",\"isVip\":false,\"level\":1080},\"dm\":{\"enabled\":false,\"name\":\"弹幕开\"},\"xj\":{\"vodId\":\"VIDAbX80MYkBm26iUGxFbZiS240823\",\"id\":\"VIDEFPawmPLPSzUQPK1EmpW4241004\",\"url\":\"https://tv.cctv.com/2024/10/04/VIDEFPawmPLPSzUQPK1EmpW4241004.shtml\",\"isVip\":false,\"remark\":\"\",\"title\":\"第1集\",\"index\":0,\"site\":\"cctv\"}},\"video\":true,\"hzs\":[{\"id\":\"0\",\"name\":\"超清\",\"isVip\":false,\"level\":1080},{\"id\":\"1\",\"name\":\"高清\",\"isVip\":false,\"level\":720},{\"id\":\"2\",\"name\":\"标清\",\"isVip\":false,\"level\":480},{\"id\":\"3\",\"name\":\"流畅\",\"isVip\":false,\"level\":480}],\"xjs\":[{\"vodId\":\"VIDAbX80MYkBm26iUGxFbZiS240823\",\"id\":\"VIDEFPawmPLPSzUQPK1EmpW4241004\",\"url\":\"https://tv.cctv.com/2024/10/04/VIDEFPawmPLPSzUQPK1EmpW4241004.shtml\",\"isVip\":false,\"remark\":\"\",\"title\":\"第1集\",\"index\":0,\"site\":\"cctv\"},{\"vodId\":\"VIDAbX80MYkBm26iUGxFbZiS240823\",\"id\":\"VIDENlVbFmFvGpcJZjM5ie9b241004\",\"url\":\"https://tv.cctv.com/2024/10/04/VIDENlVbFmFvGpcJZjM5ie9b241004.shtml\",\"isVip\":false,\"remark\":\"\",\"title\":\"第2集\",\"index\":1,\"site\":\"cctv\"},{\"vodId\":\"VIDAbX80MYkBm26iUGxFbZiS240823\",\"id\":\"VIDEf0UNIWk0LDNRJKSXrKvv241004\",\"url\":\"https://tv.cctv.com/2024/10/04/VIDEf0UNIWk0LDNRJKSXrKvv241004.shtml\",\"isVip\":false,\"remark\":\"\",\"title\":\"第3集\",\"index\":2,\"site\":\"cctv\"},{\"vodId\":\"VIDAbX80MYkBm26iUGxFbZiS240823\",\"id\":\"VIDEfOvUN4ByrzXCUnnCxJn4241004\",\"url\":\"https://tv.cctv.com/2024/10/04/VIDEfOvUN4ByrzXCUnnCxJn4241004.shtml\",\"isVip\":false,\"remark\":\"\",\"title\":\"第4集\",\"index\":3,\"site\":\"cctv\"},{\"vodId\":\"VIDAbX80MYkBm26iUGxFbZiS240823\",\"id\":\"VIDEky737CJjkECt0QFypznF241004\",\"url\":\"https://tv.cctv.com/2024/10/04/VIDEky737CJjkECt0QFypznF241004.shtml\",\"isVip\":false,\"remark\":\"\",\"title\":\"第5集\",\"index\":4,\"site\":\"cctv\"},{\"vodId\":\"VIDAbX80MYkBm26iUGxFbZiS240823\",\"id\":\"VIDEKjStsWu7GMjP0dXWlrIV241004\",\"url\":\"https://tv.cctv.com/2024/10/04/VIDEKjStsWu7GMjP0dXWlrIV241004.shtml\",\"isVip\":false,\"remark\":\"\",\"title\":\"第6集\",\"index\":5,\"site\":\"cctv\"},{\"vodId\":\"VIDAbX80MYkBm26iUGxFbZiS240823\",\"id\":\"VIDErauRBBfbiFhCB5v8tKya241004\",\"url\":\"https://tv.cctv.com/2024/10/04/VIDErauRBBfbiFhCB5v8tKya241004.shtml\",\"isVip\":false,\"remark\":\"\",\"title\":\"第7集\",\"index\":6,\"site\":\"cctv\"},{\"vodId\":\"VIDAbX80MYkBm26iUGxFbZiS240823\",\"id\":\"VIDEk5QNBZCrR6c3tUKQ5G0v241004\",\"url\":\"https://tv.cctv.com/2024/10/04/VIDEk5QNBZCrR6c3tUKQ5G0v241004.shtml\",\"isVip\":false,\"remark\":\"\",\"title\":\"第8集\",\"index\":7,\"site\":\"cctv\"},{\"vodId\":\"VIDAbX80MYkBm26iUGxFbZiS240823\",\"id\":\"VIDE7Ax2EJBHIIv6NLkcLeQ1241004\",\"url\":\"https://tv.cctv.com/2024/10/04/VIDE7Ax2EJBHIIv6NLkcLeQ1241004.shtml\",\"isVip\":false,\"remark\":\"\",\"title\":\"第9集\",\"index\":8,\"site\":\"cctv\"},{\"vodId\":\"VIDAbX80MYkBm26iUGxFbZiS240823\",\"id\":\"VIDE4tjHWxAz9hrJy1vvQIum241004\",\"url\":\"https://tv.cctv.com/2024/10/04/VIDE4tjHWxAz9hrJy1vvQIum241004.shtml\",\"isVip\":false,\"remark\":\"\",\"title\":\"第10集\",\"index\":9,\"site\":\"cctv\"},{\"vodId\":\"VIDAbX80MYkBm26iUGxFbZiS240823\",\"id\":\"VIDECC5cQljnq3VJiNDVCIh2241004\",\"url\":\"https://tv.cctv.com/2024/10/04/VIDECC5cQljnq3VJiNDVCIh2241004.shtml\",\"isVip\":false,\"remark\":\"\",\"title\":\"第11集\",\"index\":10,\"site\":\"cctv\"},{\"vodId\":\"VIDAbX80MYkBm26iUGxFbZiS240823\",\"id\":\"VIDErEGIBT80OQka4D4zzqyR241004\",\"url\":\"https://tv.cctv.com/2024/10/04/VIDErEGIBT80OQka4D4zzqyR241004.shtml\",\"isVip\":false,\"remark\":\"\",\"title\":\"第12集\",\"index\":11,\"site\":\"cctv\"},{\"vodId\":\"VIDAbX80MYkBm26iUGxFbZiS240823\",\"id\":\"VIDEoxYPNHkw8H7tpaJbQ8Ez241004\",\"url\":\"https://tv.cctv.com/2024/10/04/VIDEoxYPNHkw8H7tpaJbQ8Ez241004.shtml\",\"isVip\":false,\"remark\":\"\",\"title\":\"第13集\",\"index\":12,\"site\":\"cctv\"},{\"vodId\":\"VIDAbX80MYkBm26iUGxFbZiS240823\",\"id\":\"VIDEfNaEXnhDLGlHKnbSyIiA241004\",\"url\":\"https://tv.cctv.com/2024/10/04/VIDEfNaEXnhDLGlHKnbSyIiA241004.shtml\",\"isVip\":false,\"remark\":\"\",\"title\":\"第14集\",\"index\":13,\"site\":\"cctv\"},{\"vodId\":\"VIDAbX80MYkBm26iUGxFbZiS240823\",\"id\":\"VIDEyszGt3kQcMqF0Ler3aqN241004\",\"url\":\"https://tv.cctv.com/2024/10/04/VIDEyszGt3kQcMqF0Ler3aqN241004.shtml\",\"isVip\":false,\"remark\":\"\",\"title\":\"第15集\",\"index\":14,\"site\":\"cctv\"},{\"vodId\":\"VIDAbX80MYkBm26iUGxFbZiS240823\",\"id\":\"VIDEGAj71EmjkfJCE3HJrLT0241004\",\"url\":\"https://tv.cctv.com/2024/10/04/VIDEGAj71EmjkfJCE3HJrLT0241004.shtml\",\"isVip\":false,\"remark\":\"\",\"title\":\"第16集\",\"index\":15,\"site\":\"cctv\"},{\"vodId\":\"VIDAbX80MYkBm26iUGxFbZiS240823\",\"id\":\"VIDEWrwLZ4ecCNheHxKkGagB241004\",\"url\":\"https://tv.cctv.com/2024/10/04/VIDEWrwLZ4ecCNheHxKkGagB241004.shtml\",\"isVip\":false,\"remark\":\"\",\"title\":\"第17集\",\"index\":16,\"site\":\"cctv\"},{\"vodId\":\"VIDAbX80MYkBm26iUGxFbZiS240823\",\"id\":\"VIDEPnIaxsZfUwQrNtsGZPu1241004\",\"url\":\"https://tv.cctv.com/2024/10/04/VIDEPnIaxsZfUwQrNtsGZPu1241004.shtml\",\"isVip\":false,\"remark\":\"\",\"title\":\"第18集\",\"index\":17,\"site\":\"cctv\"},{\"vodId\":\"VIDAbX80MYkBm26iUGxFbZiS240823\",\"id\":\"VIDE5yVCNlsqB66wGZeXQnXd241004\",\"url\":\"https://tv.cctv.com/2024/10/04/VIDE5yVCNlsqB66wGZeXQnXd241004.shtml\",\"isVip\":false,\"remark\":\"\",\"title\":\"第19集\",\"index\":18,\"site\":\"cctv\"},{\"vodId\":\"VIDAbX80MYkBm26iUGxFbZiS240823\",\"id\":\"VIDEt9IO3Ef2XAUk9kJj5ckI241004\",\"url\":\"https://tv.cctv.com/2024/10/04/VIDEt9IO3Ef2XAUk9kJj5ckI241004.shtml\",\"isVip\":false,\"remark\":\"\",\"title\":\"第20集\",\"index\":19,\"site\":\"cctv\"},{\"vodId\":\"VIDAbX80MYkBm26iUGxFbZiS240823\",\"id\":\"VIDE0teKgS3YSkLXdsMbU5e7241004\",\"url\":\"https://tv.cctv.com/2024/10/04/VIDE0teKgS3YSkLXdsMbU5e7241004.shtml\",\"isVip\":false,\"remark\":\"\",\"title\":\"第21集\",\"index\":20,\"site\":\"cctv\"},{\"vodId\":\"VIDAbX80MYkBm26iUGxFbZiS240823\",\"id\":\"VIDEaeBa6l7jvzA3FT9wi7QD240909\",\"url\":\"https://tv.cctv.com/2024/09/09/VIDEaeBa6l7jvzA3FT9wi7QD240909.shtml\",\"isVip\":false,\"remark\":\"\",\"title\":\"第22集\",\"index\":21,\"site\":\"cctv\"},{\"vodId\":\"VIDAbX80MYkBm26iUGxFbZiS240823\",\"id\":\"VIDET6ITKgxlsT90wnDHRphg241004\",\"url\":\"https://tv.cctv.com/2024/10/04/VIDET6ITKgxlsT90wnDHRphg241004.shtml\",\"isVip\":false,\"remark\":\"\",\"title\":\"第23集\",\"index\":22,\"site\":\"cctv\"},{\"vodId\":\"VIDAbX80MYkBm26iUGxFbZiS240823\",\"id\":\"VIDEdSIeI5j8tboauPoHuxQ3241004\",\"url\":\"https://tv.cctv.com/2024/10/04/VIDEdSIeI5j8tboauPoHuxQ3241004.shtml\",\"isVip\":false,\"remark\":\"\",\"title\":\"第24集\",\"index\":23,\"site\":\"cctv\"}],\"rates\":[{\"id\":\"0\",\"name\":\"2x\",\"isCurrent\":false},{\"id\":\"1\",\"name\":\"1.5x\",\"isCurrent\":false},{\"id\":\"2\",\"name\":\"1.25x\",\"isCurrent\":false},{\"id\":\"3\",\"name\":\"正常\",\"isCurrent\":true},{\"id\":\"4\",\"name\":\"0.5x\",\"isCurrent\":false}],\"tab\":\"hz\",\"focusId\":\"tv\",\"isVip\":true}";
     private static String TAG="MainBaseActivity";
     private static GeckoView view;
     private static GeckoRuntime sRuntime;
@@ -74,16 +73,47 @@ public class MainBaseActivity extends Activity {
     }
     private void bind(){
         binding = DataBindingUtil.setContentView(this, R.layout.activity_main);
-        xjBlind(new ArrayList<>());
-        hzBind(new ArrayList<>());
-        rateBind(new ArrayList<>());
-        binding.hzBtn.requestFocus();
-        DetailMenu detailMenu2 = JsonUtil.fromJson(TestActivity.json,DetailMenu.class);
-        detailMenu2.getNow().getXj().setIndex(20);
-        binding.setMenu(detailMenu2);
+        binding.setMenuTitleHandler(new MenuTitleHandler());
+        //webViewFocusChange();
         focusChange();
-        binding.tvMenu.setVisibility(View.VISIBLE);
     }
+    private  void webViewFocusChange(){
+        binding.geckoview.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+            @Override
+            public void onFocusChange(View v, boolean hasFocus) {
+                Log.i("webViewFocusChange","v "+v+" hasFocus "+hasFocus);
+            }
+        });
+    }
+
+
+    protected  boolean isMenuShow(){
+        int visible=  binding.tvMenu.getVisibility();
+        if(visible== View.VISIBLE){
+           return true;
+        }
+        return false;
+    }
+    protected void showMenu(String data){
+        binding.geckoview.setFocusable(false);
+        //binding.tvMenu.setFocusable(true);
+        Log.i(TAG,"data:: "+data);
+        DetailMenu detailMenu = JsonUtil.fromJson(data,DetailMenu.class);
+        binding.setMenu(detailMenu);
+        xjBlind(detailMenu.getXjs());
+        hzBind(detailMenu.getHzs());
+        rateBind(detailMenu.getRates());
+        //binding.nextBtn.setBackgroundResource(R.drawable.btnsel);
+        binding.xjBtn.requestFocus();
+        binding.tvMenu.setVisibility(View.VISIBLE);
+        //binding.tvMenu.setFocusable(false);
+    }
+
+    protected void hideMenu(){
+        binding.tvMenu.setVisibility(View.GONE);
+        binding.geckoview.setFocusable(true);
+    }
+
 
 
 
@@ -270,6 +300,7 @@ public class MainBaseActivity extends Activity {
         if(null==tagObj){return null;}
         return  tagObj.toString();
     }
+
     private void focusChange() {
         View view = binding.tvMenu;
         view.getViewTreeObserver().addOnGlobalFocusChangeListener(new ViewTreeObserver.OnGlobalFocusChangeListener() {
@@ -277,6 +308,7 @@ public class MainBaseActivity extends Activity {
             public void onGlobalFocusChanged(View oldFocus, View newFocus) {
                 Log.d(TAG, "onGlobalFocusChanged: oldFocus=" + oldFocus);
                 Log.d(TAG, "onGlobalFocusChanged: newFocus=" + newFocus);
+                //lastFocus=oldFocus;nowFocus=newFocus;
                 Button focusBtn=defaultFocusBtn(oldFocus,newFocus);
                 if(null==focusBtn){return;}
                 Object tagObj=focusBtn.getTag();
@@ -355,7 +387,7 @@ public class MainBaseActivity extends Activity {
                 holder.getBinding().setVariable(BR.itemPresenter, ItemPresenter);
             }
         };
-        xjAdapter.setItemPresenter(new EventBlind.XjBindPresenter());
+        xjAdapter.setItemPresenter(new XjBindPresenter());
         binding.xjsView
                 .setLayoutManager(new GridLayoutManager(this, 6));
         binding.xjsView
@@ -369,7 +401,7 @@ public class MainBaseActivity extends Activity {
                 holder.getBinding().setVariable(BR.itemPresenter, ItemPresenter);
             }
         };
-        hzAdapter.setItemPresenter(new EventBlind.HzBindPresenter());
+        hzAdapter.setItemPresenter(new HzBindPresenter());
         binding.hzsView
                 .setLayoutManager(new LinearLayoutManager(this,LinearLayoutManager.HORIZONTAL,false));
         binding.hzsView
@@ -384,7 +416,7 @@ public class MainBaseActivity extends Activity {
                 holder.getBinding().setVariable(BR.itemPresenter, ItemPresenter);
             }
         };
-        rateAdapter.setItemPresenter(new EventBlind.RateBindPresenter());
+        rateAdapter.setItemPresenter(new RateBindPresenter());
         binding.ratesView
                 .setLayoutManager(new LinearLayoutManager(this,LinearLayoutManager.HORIZONTAL,false));
         binding.ratesView
@@ -392,11 +424,43 @@ public class MainBaseActivity extends Activity {
 
     }
 
-    public class MenuHandler {
+    public  class XjBindPresenter implements IBaseBindingPresenter {
 
-        public void tabFocus() {
+        public void onClick(XjItem item) {
+            Log.i(TAG,item.getTitle());
+            //TestActivity.binding.getMenu().getNow().setXj(item);
+            hideMenu();
+            postMessage("click","xj-"+item.getId());
 
         }
+    }
+
+    public    class HzBindPresenter implements IBaseBindingPresenter {
+
+        public void onClick(HzItem item) {
+            Log.i(TAG,item.getName());
+            hideMenu();
+            postMessage("click","hz-"+item.getId());
+
+        }
+    }
+    public  class RateBindPresenter implements IBaseBindingPresenter {
+
+        public void onClick(RateItem item) {
+            Log.i(TAG,item.getName());
+            hideMenu();
+            postMessage("click","rate-"+item.getId());
+
+        }
+    }
+    public  class MenuTitleHandler {
+
+        public void nextBtn() {
+            hideMenu();
+            postMessage("click","tv-next");
+
+        }
+
     }
 
 }
