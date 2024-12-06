@@ -52,6 +52,7 @@
                         android:id="@+id/xjBtn"
                         android:tag="menu_xj"
                         android:textSize="@dimen/fontDefault"
+                        android:textColor="@color/black"
                         android:text="@{menu.video?@string/xj:@string/zb}"
                         android:layout_margin="8dp"
                         android:layout_width="wrap_content"
@@ -74,7 +75,7 @@
                         android:onClick="@{()->menuTitleHandler.nextBtn()}"
 
                         android:textSize="@dimen/fontDefault"
-
+                        android:textColor="@color/black"
                         android:layout_margin="8dp"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -92,6 +93,7 @@
                         style="?android:attr/button"
                         android:id="@+id/hzBtn"
                         android:textSize="@dimen/fontDefault"
+                        android:textColor="@color/black"
                         android:tag="menu_hz"
                         android:text="@{@string/hz+menu.now.hz.name}"
                         android:layout_width="wrap_content"
@@ -102,7 +104,6 @@
                         android:background="@drawable/login_btn_select"
                         android:padding="8dp" />
                 </LinearLayout>
-
                 <LinearLayout
                     android:layout_weight="1"
                     android:gravity="center"
@@ -115,7 +116,29 @@
                         android:id="@+id/rateBtn"
                         android:tag="menu_rate"
                         android:textSize="@dimen/fontDefault"
+                        android:textColor="@color/black"
                         android:text="@{@string/rate+menu.now.rate.name}"
+                        android:layout_margin="8dp"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/login_btn_select"
+                        android:focusable="true"
+                        android:padding="8dp" />
+                </LinearLayout>
+                <LinearLayout
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:layout_width="wrap_content"
+                    android:visibility="visible"
+                    android:layout_height="wrap_content">
+                    <Button
+                        android:id="@+id/reloadBtn"
+                        android:tag="menu_reload"
+                        android:text="@string/reload"
+                        android:onClick="@{()->menuTitleHandler.reloadBtn()}"
+                        android:textSize="@dimen/fontDefault"
+                        android:textColor="@color/black"
                         android:layout_margin="8dp"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -142,7 +165,28 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"/>
         </LinearLayout>
-
+        <LinearLayout
+            android:id="@+id/loading"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#E3EDCD"
+            android:focusable="false"
+            android:gravity="center"
+            android:visibility="gone"
+            android:orientation="vertical">
+            <ProgressBar
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:indeterminate="true" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="@dimen/fontDefault"
+                android:textColor="@color/black"
+                android:text="油桃投屏启动中。。。从此无需电视端VIP！"
+                android:layout_marginTop="16dp" />
+        </LinearLayout>
     </FrameLayout>
 
 

@@ -3,6 +3,7 @@ package com.vonchange.utao.gecko;
 import android.app.Instrumentation;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.view.MotionEvent;
 import android.widget.Toast;
 
 import com.vonchange.utao.gecko.dao.HistoryDaoX;
@@ -11,6 +12,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class MainActivity extends MainBaseActivity  {
+
+
     private static String TAG="MainActivity";
     @Override
     protected  void message(String service,String data){
@@ -28,7 +31,7 @@ public class MainActivity extends MainBaseActivity  {
         if("history.all".equals(service)){
             HistoryDaoX.all(this,data);
         }
-        if("runEnv".equals(service)){
+        if("app".equals(service)){
             postMessage(service,data);
             return;
         }
@@ -52,62 +55,27 @@ public class MainActivity extends MainBaseActivity  {
             return;
         }
     }
-   /* public boolean dispatchTouchEvent(MotionEvent event) {
+    public boolean dispatchTouchEvent(MotionEvent event) {
         if(event.getAction() == KeyEvent.ACTION_DOWN){
             float x= event.getX();
             float y= event.getY();
             Log.i("dispatchTouchEvent", "x" + x+"y "+y);
             if(x<100f&&y<100f) {
-                ctrl("menu");
-                return true;
+                menuCtrl();
             }
         }
         return super.dispatchTouchEvent(event);
-    }*/
-  /*  @Override
-    public boolean dispatchTouchEvent(MotionEvent event) {
-        boolean isMenuShow=isMenuShow();
-        //||event.getAction()==KeyEvent.ACTION_UP
-        if(event.getAction() == KeyEvent.ACTION_DOWN &&!isMenuShow){
-            float x= event.getX();
-            float y= event.getY();
-            Log.i("dispatchTouchEvent", "x" + x+"y "+y);
-            if(x<300f){
-                if(y<300f){
-                    onKeyEvent(KeyEvent.KEYCODE_BACK, event.getAction());
-                    return true;
-                }
-                onKeyEvent(KeyEvent.KEYCODE_DPAD_LEFT, event.getAction());
-                return true;
-            }
-            if(x>1600f){
-                if(y<300f){
-                    //menu
-                    //onKeyEvent(KeyEvent.KEYCODE_R, event.getAction());
-                    ctrl("menu");
-                    return true;
-                }
-                Log.i(TAG,"KEYCODE_DPAD_RIGHT");
-                ctrl("right");
-                //onKeyEvent(KeyEvent.KEYCODE_DPAD_RIGHT, event.getAction());
-                return false;
-            }
-            if(y<300f){
-                onKeyEvent(KeyEvent.KEYCODE_DPAD_UP, event.getAction());
-                Log.i(TAG,"KEYCODE_DPAD_UP");
-                return false;
-            }
-            if(y>800f){
-                onKeyEvent(KeyEvent.KEYCODE_DPAD_DOWN, event.getAction());
-                return true;
-            }
-            onKeyEvent(KeyEvent.KEYCODE_DPAD_CENTER, event.getAction());
-            ctrl("ok");
-            return true;
+    }
+    private static long mClickBackTime = 0;
+    private static long mClickOkTime=0;
+    private void menuCtrl(){
+        boolean  isMenuShow=isMenuShow();
+        if(isMenuShow){
+            hideMenu();
+        }else{
+            ctrl("menu");
         }
-        return super.dispatchTouchEvent(event);
-    }*/
-    private long mClickBackTime = 0;
+    }
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
         int keyCode = event.getKeyCode();
@@ -115,9 +83,17 @@ public class MainActivity extends MainBaseActivity  {
             Log.i("keyDown c ", keyCode+" keyDown" + event);
             //4 返回  62空格(32)' 双enter 也是
             if((keyCode==KeyEvent.KEYCODE_MENU)||keyCode==KeyEvent.KEYCODE_TAB){
-                ctrl("menu");
+                menuCtrl();
                 return true;
             }
+         /*   if((keyCode == KeyEvent.KEYCODE_DPAD_CENTER||keyCode==KeyEvent.KEYCODE_ENTER)){
+                long currentTime = System.currentTimeMillis();
+                if (currentTime - mClickOkTime < 2000) {
+                    menuCtrl();
+                    return true;
+                }
+                mClickOkTime = currentTime;
+            }*/
         }
         if(keyCode==KeyEvent.KEYCODE_BACK){
             if (event.getAction() == KeyEvent.ACTION_UP) {

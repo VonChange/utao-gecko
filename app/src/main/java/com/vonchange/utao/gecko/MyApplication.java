@@ -1,16 +1,17 @@
 package com.vonchange.utao.gecko;
 
 
-
 import android.app.Application;
-import android.util.Log;
+import android.content.Context;
 
-import org.mozilla.geckoview.GeckoRuntime;
-import org.mozilla.geckoview.GeckoSession;
-import org.mozilla.geckoview.GeckoSessionSettings;
-import org.mozilla.geckoview.GeckoView;
+import androidx.multidex.MultiDex;
 
 public class MyApplication extends Application {
+    @Override
+    protected void attachBaseContext(Context base) {
+        super.attachBaseContext(base);
+        MultiDex.install(base);
+    }
 
     @Override
     public void onCreate() {

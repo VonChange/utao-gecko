@@ -2,6 +2,7 @@ package com.vonchange.utao.gecko;
 
 import android.app.Activity;
 import android.content.pm.ActivityInfo;
+import android.content.res.AssetManager;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -27,6 +28,8 @@ import com.vonchange.utao.gecko.domain.XjItem;
 import com.vonchange.utao.gecko.impl.BaseBindingAdapter;
 import com.vonchange.utao.gecko.impl.BaseViewHolder;
 import com.vonchange.utao.gecko.impl.IBaseBindingPresenter;
+import com.vonchange.utao.gecko.util.ConstantMy;
+import com.vonchange.utao.gecko.util.FileUtil;
 import com.vonchange.utao.gecko.util.JsonUtil;
 
 import org.json.JSONException;
@@ -39,6 +42,8 @@ import org.mozilla.geckoview.GeckoSessionSettings;
 import org.mozilla.geckoview.GeckoView;
 import org.mozilla.geckoview.WebExtension;
 
+import java.io.File;
+import java.lang.reflect.Method;
 import java.util.List;
 
 public class MainBaseActivity extends Activity {
@@ -47,7 +52,9 @@ public class MainBaseActivity extends Activity {
     private static GeckoView view;
     private static GeckoRuntime sRuntime;
     public static GeckoSession session;
-    private static final String EXTENSION_LOCATION = "resource://android/assets/tv-web/";
+    private static  String EXTENSION_LOCATION ="android/assets/tv-web/";
+            //"resource://android/assets/tv-web/";
+    private static String updateUrl;
     private static final String EXTENSION_ID = "utao@163.com";
     // If you make changes to the extension you need to update this
     private static final String EXTENSION_VERSION = "1.0";
@@ -61,7 +68,7 @@ public class MainBaseActivity extends Activity {
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
         //setContentView(R.layout.activity_main);
-        binding = DataBindingUtil.setContentView(this, R.layout.activity_main);
+        //binding = DataBindingUtil.setContentView(this, R.layout.activity_main);
         bind();
         view = binding.geckoview;
         preInitWebView();
@@ -70,6 +77,47 @@ public class MainBaseActivity extends Activity {
         //extension.setMessageDelegate(messageDelegate, "browser"),
         //file://android_asset/index.html resource://android/assets/tv-web/index.html
        // session.loadUri(webExtension.metaData.baseUrl+"index.html"); // Or any other URL...
+    }
+
+    private AssetManager createAssetManager(String skinFilePath) {
+        try {
+            AssetManager assetManager = AssetManager.class.newInstance();
+            Method addAssetPath = assetManager.getClass().getMethod("addAssetPath", String.class);
+            addAssetPath.invoke(assetManager, skinFilePath);
+            return assetManager;
+        } catch (Exception e) {
+           throw  new RuntimeException(e);
+           // return null;
+        }
+    }
+    //https://github.com/VonChange/res/archive/refs/heads/master.zip
+    private void updateRes(){
+           //copyAssets 到应用目录
+         String tvWebZip="tv-web";
+         String  baseFolder= this.getExternalFilesDir(ConstantMy.UTAO).getPath();
+         String toZipFilePath=baseFolder+"/"+tvWebZip+".xpi";
+         File toZipFile =new File(toZipFilePath);
+         if(!toZipFile.exists()){
+             //不存在 copy assert 下文件
+            // FileUtil.copyFileFromAssert(this,
+                     //tvWebZip+".zip",toZipFilePath);
+         }else{
+             //校验线上版本 不一致 更新
+         }
+        FileUtil.copyFileFromAssert(this,
+                "b7aad81f44464e2cae86-1.0.3.xpi",toZipFilePath);
+         //解压
+     /*   try {
+            FileUtil.unzipFile(toZipFilePath,baseFolder);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }*/
+        updateUrl= new File(toZipFilePath).toURI()+"";
+                //this.getExternalFilesDir(ConstantMy.UTAO).toURI()+"tv-web/";
+
+                //"resource://android"+baseFolder+"/tv-web/";
+                //baseFolder+"/tv-web";
+
     }
     private void bind(){
         binding = DataBindingUtil.setContentView(this, R.layout.activity_main);
@@ -173,6 +221,7 @@ public class MainBaseActivity extends Activity {
                 // Registering the delegate will allow us to receive messages sent
                 // through this port.
                 webPort.setDelegate(portDelegate);
+                postMessage("app", "geckoview");
             }
         };
         return messageDelegate;
@@ -183,6 +232,7 @@ public class MainBaseActivity extends Activity {
         GeckoSessionSettings settings = session.getSettings();
         settings.setAllowJavascript(true);
         settings.setDisplayMode(GeckoSessionSettings.DISPLAY_MODE_FULLSCREEN);
+
         //USER_AGENT_MODE_MOBILE
         settings.setUserAgentMode(GeckoSessionSettings.USER_AGENT_MODE_DESKTOP);//?
         String userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36 Edg/128.0.0.0";
@@ -199,6 +249,7 @@ public class MainBaseActivity extends Activity {
                 //.setAutomaticFontSizeAdjustment(true)
                 //.setRemoteDebuggingEnabled(true)
                 .setFontInflationEnabled(true)
+
                 .setWebFontsEnabled(true);
         //.setExtensionsProcessEnabled(true)
         //.setExtensionsWebAPIEnabled(true);
@@ -206,6 +257,8 @@ public class MainBaseActivity extends Activity {
         WebExtension.MessageDelegate messageDelegate= initMessage();
         sRuntime
                 .getWebExtensionController()
+                //.installBuiltIn(EXTENSION_LOCATION)
+                //.ens()
                 .ensureBuiltIn(EXTENSION_LOCATION, EXTENSION_ID)
                 .accept(
                         extension -> {
@@ -214,6 +267,7 @@ public class MainBaseActivity extends Activity {
                                 assert extension != null;
                                 extension.setMessageDelegate(messageDelegate, "browser");
                                 session.loadUri(extension.metaData.baseUrl+"index.html");
+                                binding.loading.setVisibility(View.GONE);
                             });
                         },
                         e -> Log.e(TAG, "Error registering WebExtension", e)
@@ -222,11 +276,13 @@ public class MainBaseActivity extends Activity {
                         extension -> Log.i("MessageDelegate", "Extension installed: " + extension),
                         e -> Log.e("MessageDelegate", "Error registering WebExtension", e)
                 );*/
+
         session.open(sRuntime);
     }
 
     private  GeckoSession getGeckoSession() {
         session = new GeckoSession();
+       // session.getWebExtensionController()
     /*    session.setContentDelegate(new GeckoSession.ContentDelegate() {
             @Override
             public void onFullScreen(GeckoSession session, boolean fullScreen) {
@@ -458,9 +514,11 @@ public class MainBaseActivity extends Activity {
         public void nextBtn() {
             hideMenu();
             postMessage("click","tv-next");
-
         }
-
+        public void reloadBtn() {
+             hideMenu();
+             session.reload();
+        }
     }
 
 }

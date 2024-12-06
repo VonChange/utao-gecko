@@ -20,6 +20,7 @@
         <Button
             android:id="@+id/xjItem"
             android:textSize="@dimen/fontDefault"
+            android:textColor="@color/black"
             android:tag="xjItem"
             android:text="@{item.title+@string/kong+item.remark}"
             android:layout_width="match_parent"
