@@ -1,3 +1,12 @@
+buildscript {
+    repositories {
+        mavenCentral()
+        google()
+    }
+    dependencies {
+        classpath 'com.yanzhenjie.andserver:plugin:2.1.12'
+    }
+}
 plugins {
     alias(libs.plugins.android.application)
 }
@@ -10,6 +19,7 @@ ext{
     rxhttp_version = "3.2.6"
     okhttp_version = "3.12.13"
     room_version = "2.6.1"
+    andserver_version = "2.1.12"
 }
 android {
     namespace 'com.vonchange.utao.gecko'
@@ -32,7 +42,7 @@ android {
         versionCode 7
         versionName "2024年11月10日1"
         ndk {
-            abiFilters "armeabi-v7a","x86"//"armeabi-v7a","x86" arm64-v8a ""armeabi-v7a"// arm64-v8a、armeabi-v7a、x86_64、x86 中的一个或多个
+            abiFilters "armeabi-v7a"//"armeabi-v7a","x86" arm64-v8a ""armeabi-v7a"// arm64-v8a、armeabi-v7a、x86_64、x86 中的一个或多个
         }
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         javaCompileOptions {
@@ -69,11 +79,11 @@ android {
         variant ->
             variant.outputs.all {
                 // 此处指定生成的apk文件名
-                outputFileName = "utao.apk"
+                outputFileName = "utao-fox.apk"
             }
     }
 }
-
+apply plugin: 'com.yanzhenjie.andserver'
 dependencies {
    // implementation 'androidx.leanback:leanback:1.0.0'
     implementation "org.mozilla.geckoview:geckoview${geckoviewChannel}:${geckoviewVersion}"
@@ -85,6 +95,8 @@ dependencies {
     implementation 'com.google.code.gson:gson:2.8.9'
     implementation "com.squareup.okhttp3:okhttp:$okhttp_version"
     implementation 'androidx.multidex:multidex:2.0.1'
+    implementation "com.yanzhenjie.andserver:api:${andserver_version}"
+    annotationProcessor "com.yanzhenjie.andserver:processor:$andserver_version"
     //implementation libs.appcompat
    // implementation libs.material
     testImplementation libs.junit
@@ -92,3 +104,4 @@ dependencies {
     //androidTestImplementation libs.ext.junit
    // androidTestImplementation libs.espresso.core
 }
+

@@ -1,10 +1,10 @@
 package com.vonchange.utao.gecko;
 
+import android.annotation.SuppressLint;
 import android.app.Instrumentation;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
-import android.widget.Toast;
 
 import com.vonchange.utao.gecko.dao.HistoryDaoX;
 
@@ -76,7 +76,7 @@ public class MainActivity extends MainBaseActivity  {
             ctrl("menu");
         }
     }
-    @Override
+/*    @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
         int keyCode = event.getKeyCode();
         if (event.getAction() == KeyEvent.ACTION_DOWN) {
@@ -86,14 +86,14 @@ public class MainActivity extends MainBaseActivity  {
                 menuCtrl();
                 return true;
             }
-         /*   if((keyCode == KeyEvent.KEYCODE_DPAD_CENTER||keyCode==KeyEvent.KEYCODE_ENTER)){
+         *//*   if((keyCode == KeyEvent.KEYCODE_DPAD_CENTER||keyCode==KeyEvent.KEYCODE_ENTER)){
                 long currentTime = System.currentTimeMillis();
                 if (currentTime - mClickOkTime < 2000) {
                     menuCtrl();
                     return true;
                 }
                 mClickOkTime = currentTime;
-            }*/
+            }*//*
         }
         if(keyCode==KeyEvent.KEYCODE_BACK){
             if (event.getAction() == KeyEvent.ACTION_UP) {
@@ -122,7 +122,7 @@ public class MainActivity extends MainBaseActivity  {
             postMessage("back","");
         }
         return super.dispatchKeyEvent(event);
-    }
+    }*/
     private boolean normalKey(int keyCode){
         int[] keys=new int[]{KeyEvent.KEYCODE_DPAD_RIGHT,KeyEvent.KEYCODE_DPAD_LEFT,
                 KeyEvent.KEYCODE_DPAD_DOWN,KeyEvent.KEYCODE_DPAD_UP,KeyEvent.KEYCODE_VOLUME_UP,KeyEvent.KEYCODE_VOLUME_DOWN,
@@ -134,7 +134,7 @@ public class MainActivity extends MainBaseActivity  {
         }
         return false;
     }
-/*    @SuppressLint("RestrictedApi")
+    @SuppressLint("RestrictedApi")
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
         if(event.getAction() == KeyEvent.ACTION_UP){
@@ -188,7 +188,7 @@ public class MainActivity extends MainBaseActivity  {
             return true;
         }
         return super.dispatchKeyEvent(event);
-    }*/
+    }
 
     private static Instrumentation inst = new Instrumentation();
 
