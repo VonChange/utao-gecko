@@ -18,3 +18,4 @@
 local.properties
 /app/src/main/assets
 /app/src/main/assets/tv-web/
+/app/build/
