@@ -1,6 +1,7 @@
 *.iml
 .gradle
 .idea
+/app/release
 /local.properties
 /.idea/caches
 /.idea/libraries
@@ -9,9 +10,11 @@
 /.idea/navEditor.xml
 /.idea/assetWizardSettings.xml
 .DS_Store
+/release
 /build
 /captures
 .externalNativeBuild
 .cxx
 local.properties
 /app/src/main/assets
+/app/src/main/assets/tv-web/
