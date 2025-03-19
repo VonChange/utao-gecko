@@ -88,6 +88,26 @@
                     android:gravity="center"
                     android:orientation="vertical"
                     android:layout_width="wrap_content"
+                    android:visibility="@{(menu.video&amp;&amp;menu.jds.size>0)?View.VISIBLE:View.GONE}"
+                    android:layout_height="wrap_content">
+                    <Button
+                        android:id="@+id/jdBtn"
+                        android:tag="menu_jd"
+                        android:text="@string/jd"
+                        android:textSize="@dimen/fontDefault"
+                        android:textColor="@color/black"
+                        android:layout_margin="8dp"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/login_btn_select"
+                        android:focusable="true"
+                        android:padding="8dp" />
+                </LinearLayout>
+                <LinearLayout
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content">
                     <Button
                         style="?android:attr/button"
@@ -148,6 +168,11 @@
                 </LinearLayout>
 
             </LinearLayout>
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/jds_view"
+                android:visibility="@{menu.tab.equals(`jd`)?View.VISIBLE:View.GONE}"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"/>
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/hzs_view"
                 android:visibility="@{menu.tab.equals(`hz`)?View.VISIBLE:View.GONE}"

@@ -63,7 +63,7 @@ public class FileUtil {
         return null;
     }
 
-    private static String getStringFromInputStream(InputStream a_is) {
+    public static String getStringFromInputStream(InputStream a_is) {
         BufferedReader br = null;
         StringBuilder sb = new StringBuilder();
         String line;
@@ -83,6 +83,7 @@ public class FileUtil {
         }
         return sb.toString();
     }
+
     public static void unzipFile(String zipPtath, String outputDirectory)throws IOException {
         /**
          * 解压assets的zip压缩文件到指定目录

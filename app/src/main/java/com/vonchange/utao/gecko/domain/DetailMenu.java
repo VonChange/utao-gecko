@@ -9,6 +9,7 @@ public class DetailMenu extends BaseObservable  {
     private List<XjItem> xjs;
     private List<HzItem> hzs;
     private List<RateItem> rates;
+    private List<JdItem> jds;
     private Boolean video;
     private String tab;
     private Boolean isVip;
@@ -80,5 +81,13 @@ public class DetailMenu extends BaseObservable  {
 
     public void setVip(Boolean vip) {
         isVip = vip;
+    }
+
+    public List<JdItem> getJds() {
+        return jds;
+    }
+
+    public void setJds(List<JdItem> jds) {
+        this.jds = jds;
     }
 }

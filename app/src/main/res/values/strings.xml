@@ -1,7 +1,8 @@
 <resources>
-    <string name="app_name">gecko</string>
+    <string name="app_name">油桃TV火狐版</string>
     <string name="reload">重载</string>
     <string name="hz">画质</string>
+    <string name="jd">进度</string>
     <string name="rate">倍数</string>
     <string name="next">下一集</string>
     <string name="xj">选集</string>

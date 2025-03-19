@@ -2,9 +2,11 @@ package com.vonchange.utao.gecko;
 
 import android.annotation.SuppressLint;
 import android.app.Instrumentation;
+import android.content.res.Configuration;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
+import android.widget.Toast;
 
 import com.vonchange.utao.gecko.dao.HistoryDaoX;
 
@@ -13,8 +15,30 @@ import java.util.Map;
 
 public class MainActivity extends MainBaseActivity  {
 
-
     private static String TAG="MainActivity";
+    private long mClickBackTime = 0;
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        Log.i(TAG,"onConfigurationChanged...."+newConfig.orientation);
+        super.onConfigurationChanged(newConfig);
+        // 检查屏幕方向是否改变
+        if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            // 在这里处理横屏模式下的布局调整
+        } else if (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT) {
+            // 在这里处理竖屏模式下的布局调整
+        }
+    }
+    public boolean dispatchTouchEvent(MotionEvent event) {
+        if(event.getAction() == KeyEvent.ACTION_DOWN){
+            float x= event.getX();
+            float y= event.getY();
+            //Log.i("dispatchTouchEvent", "x" + x+"y "+y);
+            if(x<100f&&y<100f) {
+                ctrl("menu");
+            }
+        }
+        return super.dispatchTouchEvent(event);
+    }
     @Override
     protected  void message(String service,String data){
         Log.i(TAG, "messageservice "+service);
@@ -55,19 +79,8 @@ public class MainActivity extends MainBaseActivity  {
             return;
         }
     }
-    public boolean dispatchTouchEvent(MotionEvent event) {
-        if(event.getAction() == KeyEvent.ACTION_DOWN){
-            float x= event.getX();
-            float y= event.getY();
-            Log.i("dispatchTouchEvent", "x" + x+"y "+y);
-            if(x<100f&&y<100f) {
-                menuCtrl();
-            }
-        }
-        return super.dispatchTouchEvent(event);
-    }
-    private static long mClickBackTime = 0;
-    private static long mClickOkTime=0;
+
+
     private void menuCtrl(){
         boolean  isMenuShow=isMenuShow();
         if(isMenuShow){
@@ -76,53 +89,6 @@ public class MainActivity extends MainBaseActivity  {
             ctrl("menu");
         }
     }
-/*    @Override
-    public boolean dispatchKeyEvent(KeyEvent event) {
-        int keyCode = event.getKeyCode();
-        if (event.getAction() == KeyEvent.ACTION_DOWN) {
-            Log.i("keyDown c ", keyCode+" keyDown" + event);
-            //4 返回  62空格(32)' 双enter 也是
-            if((keyCode==KeyEvent.KEYCODE_MENU)||keyCode==KeyEvent.KEYCODE_TAB){
-                menuCtrl();
-                return true;
-            }
-         *//*   if((keyCode == KeyEvent.KEYCODE_DPAD_CENTER||keyCode==KeyEvent.KEYCODE_ENTER)){
-                long currentTime = System.currentTimeMillis();
-                if (currentTime - mClickOkTime < 2000) {
-                    menuCtrl();
-                    return true;
-                }
-                mClickOkTime = currentTime;
-            }*//*
-        }
-        if(keyCode==KeyEvent.KEYCODE_BACK){
-            if (event.getAction() == KeyEvent.ACTION_UP) {
-                return true;
-            }
-            boolean isMenuShow=isMenuShow();
-            if(isMenuShow){
-                hideMenu();
-                return true;
-            }
-            String url = NextPlusNavigationDelegate.backUrl();
-            if(null==url){
-                long currentTime = System.currentTimeMillis();
-                if (currentTime - mClickBackTime < 3000) {
-//                android.os.Process.killProcess(android.os.Process.myPid());
-                    super.onBackPressed();
-                    System.exit(0);
-                } else {
-                    Toast.makeText(getApplicationContext(), "再按一次返回键退出", Toast.LENGTH_SHORT).show();
-                    mClickBackTime = currentTime;
-                }
-            }else{
-                session.loadUri(url);
-            }
-            //detail-> home-> index
-            postMessage("back","");
-        }
-        return super.dispatchKeyEvent(event);
-    }*/
     private boolean normalKey(int keyCode){
         int[] keys=new int[]{KeyEvent.KEYCODE_DPAD_RIGHT,KeyEvent.KEYCODE_DPAD_LEFT,
                 KeyEvent.KEYCODE_DPAD_DOWN,KeyEvent.KEYCODE_DPAD_UP,KeyEvent.KEYCODE_VOLUME_UP,KeyEvent.KEYCODE_VOLUME_DOWN,
@@ -137,57 +103,67 @@ public class MainActivity extends MainBaseActivity  {
     @SuppressLint("RestrictedApi")
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
-        if(event.getAction() == KeyEvent.ACTION_UP){
-            return true;
+        if (event.getAction() == KeyEvent.ACTION_UP) {
+            return super.dispatchKeyEvent(event);
         }
-        if (event.getAction() == KeyEvent.ACTION_DOWN ) {
-            int keyCode = event.getKeyCode();
-            Log.i("keyDown", "keyDown" + keyCode);
-            // 使用switch语句来检查按下的键码
-            int type=0;
-            switch (keyCode) {
-                case KeyEvent.KEYCODE_DPAD_RIGHT:
-                    ctrl("right");
-                    break;
-                case KeyEvent.KEYCODE_DPAD_LEFT:
-                    ctrl("left");
-                    break;
-                case KeyEvent.KEYCODE_DPAD_DOWN:
-                    ctrl("down");
-                    break;
-                case KeyEvent.KEYCODE_DPAD_UP:
-                    ctrl("up");
-                    break;
-                case KeyEvent.KEYCODE_BACK:
-                    ctrl("back");
-                    break;
-                case KeyEvent.KEYCODE_MENU:
-                    ctrl("menu");
-                    break;
-                case KeyEvent.KEYCODE_ENTER:
-                    ctrl("ok");
-                    break;
-                case KeyEvent.KEYCODE_DPAD_CENTER:
-                    ctrl("ok");
-                    break;
-                case KeyEvent.KEYCODE_VOLUME_DOWN:
-                    type=1;
-                    break;
-                case KeyEvent.KEYCODE_VOLUME_UP:
-                    type=1;
-                    break;
-                default:
-                    Log.i("default", "default" + keyCode);
-                    //return true;
-                    //super.dispatchKeyEvent(event);
-                    break;
+        int keyCode = event.getKeyCode();
+        Log.i("keyDown keyCode ", keyCode+" event" + event);
+        boolean isMenuShow=isMenuShow();
+        if(isMenuShow){
+            if(keyCode==KeyEvent.KEYCODE_BACK||keyCode==KeyEvent.KEYCODE_MENU||keyCode==KeyEvent.KEYCODE_TAB){
+                hideMenu();
+                return true;
             }
-            if(type==1){
-                return super.dispatchKeyEvent(event);
-            }
-            return true;
+            return super.dispatchKeyEvent(event);
         }
-        return super.dispatchKeyEvent(event);
+        if(keyCode==KeyEvent.KEYCODE_BACK){
+            return keyBack();
+        }
+        if(keyCode==KeyEvent.KEYCODE_DPAD_CENTER||keyCode==KeyEvent.KEYCODE_ENTER){
+            return ctrl("ok");
+        }
+        if(keyCode==KeyEvent.KEYCODE_MENU||keyCode==KeyEvent.KEYCODE_TAB){
+            return ctrl("menu");
+        }
+        if(keyCode==KeyEvent.KEYCODE_DPAD_RIGHT){
+            return ctrl("right");
+        }
+        if(keyCode==KeyEvent.KEYCODE_DPAD_LEFT){
+            return ctrl("left");
+        }
+        if(keyCode==KeyEvent.KEYCODE_DPAD_DOWN){
+            return ctrl("down");
+        }
+        if(keyCode==KeyEvent.KEYCODE_DPAD_UP){
+            return ctrl("up");
+        }
+        if(keyCode==KeyEvent.KEYCODE_VOLUME_UP||keyCode==KeyEvent.KEYCODE_VOLUME_DOWN
+                ||keyCode==KeyEvent.KEYCODE_VOLUME_MUTE){
+            return super.dispatchKeyEvent(event);
+        }
+        return ctrl("menu");
+        //return super.dispatchKeyEvent(event);
+    }
+    private boolean keyBack(){
+        String url = NextPlusNavigationDelegate.backUrl();
+        Log.i("keyBack","keyBack "+url);
+        //NextPlusNavigationDelegate.backUrl();
+        if(null==url){
+            long currentTime = System.currentTimeMillis();
+            if (currentTime - mClickBackTime < 3000) {
+                //killAppProcess();
+                finish();
+                //super.onBackPressed();
+                //System.exit(0);
+            } else {
+                Toast.makeText(this, "再按一次返回键退出", Toast.LENGTH_SHORT).show();
+                mClickBackTime = currentTime;
+            }
+        }else{
+            session.loadUri(url);
+        }
+        //detail-> home-> index
+        return true;
     }
 
     private static Instrumentation inst = new Instrumentation();
@@ -235,7 +211,8 @@ public class MainActivity extends MainBaseActivity  {
         }.start();
        // super.dispatchKeyEvent(new KeyEvent(action, keyCode));
     }
-    private void ctrl(String  ctrlEvent) {
+    private boolean ctrl(String  ctrlEvent) {
         postMessage("ctrl",ctrlEvent);
+        return true;
     }
 }

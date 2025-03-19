@@ -17,12 +17,15 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.vonchange.utao.gecko.api.ConfigApi;
 import com.vonchange.utao.gecko.databinding.ActivityMainBinding;
 import com.vonchange.utao.gecko.databinding.ItemHzBinding;
+import com.vonchange.utao.gecko.databinding.ItemJdBinding;
 import com.vonchange.utao.gecko.databinding.ItemRateBinding;
 import com.vonchange.utao.gecko.databinding.ItemXjBinding;
 import com.vonchange.utao.gecko.domain.DetailMenu;
 import com.vonchange.utao.gecko.domain.HzItem;
+import com.vonchange.utao.gecko.domain.JdItem;
 import com.vonchange.utao.gecko.domain.RateItem;
 import com.vonchange.utao.gecko.domain.XjItem;
 import com.vonchange.utao.gecko.impl.BaseBindingAdapter;
@@ -69,11 +72,13 @@ public class MainBaseActivity extends Activity {
         //setContentView(R.layout.activity_main);
         //binding = DataBindingUtil.setContentView(this, R.layout.activity_main);
         bind();
-        //startHttp();
+        ConfigApi.syncLogData(this);
+        startHttp();
         view = binding.geckoview;
         preInitWebView();
         session.setNavigationDelegate(new NextPlusNavigationDelegate(this));
         view.setSession(session);
+
         //extension.setMessageDelegate(messageDelegate, "browser"),
         //file://android_asset/index.html resource://android/assets/tv-web/index.html
        // session.loadUri(webExtension.metaData.baseUrl+"index.html"); // Or any other URL...
@@ -131,6 +136,7 @@ public class MainBaseActivity extends Activity {
         DetailMenu detailMenu = JsonUtil.fromJson(data,DetailMenu.class);
         binding.setMenu(detailMenu);
         xjBlind(detailMenu.getXjs());
+        jdBlind(detailMenu.getJds());
         hzBind(detailMenu.getHzs());
         rateBind(detailMenu.getRates());
         //binding.nextBtn.setBackgroundResource(R.drawable.btnsel);
@@ -280,7 +286,7 @@ public class MainBaseActivity extends Activity {
                 return GeckoResult.fromValue(ContentPermission.VALUE_ALLOW);
             }
 
-            /*  @Override
+           /*   @Override
               public void onContentPermissionRequest(GeckoSession session, String uri, int type,  Callback callback ) {
                   Log.i("gecko", "nContentPermission Permission Needed "+uri+" "+type);
                   callback.grant();
@@ -360,6 +366,23 @@ public class MainBaseActivity extends Activity {
                             }
                         }
                         break;
+                    case "jdItem":
+                        LinearLayout layoutJd = (LinearLayout) focusBtn.getParent();
+                        RecyclerView.LayoutParams paramsJd = (RecyclerView.LayoutParams) layoutJd.getLayoutParams();
+                        int itemPositionJd = paramsJd.getViewLayoutPosition();
+                        if(itemPositionJd<6){
+                            focusBtn.setNextFocusUpId(R.id.jdBtn);
+                        }
+                        oldTag=oldBtnTag(oldFocus);
+                        if(null!=oldTag){
+                            if(oldTag.equals("menu_jd")){
+                                RecyclerView.ViewHolder viewHolder = binding.jdsView.findViewHolderForLayoutPosition(0);
+                                if(null!=viewHolder){
+                                    viewHolder.itemView.requestFocus();
+                                }
+                            }
+                        }
+                        break;
                     case "xjItem":
                         LinearLayout layout = (LinearLayout) focusBtn.getParent();
                         RecyclerView.LayoutParams params = (RecyclerView.LayoutParams) layout.getLayoutParams();
@@ -408,6 +431,20 @@ public class MainBaseActivity extends Activity {
         binding.xjsView
                 .setAdapter(xjAdapter);
     }
+    private void jdBlind(List<JdItem> jdItems){
+        BaseBindingAdapter jdAdapter = new BaseBindingAdapter<JdItem, ItemJdBinding>(jdItems,R.layout.item_jd) {
+            @Override
+            public void doBindViewHolder(BaseViewHolder<ItemJdBinding> holder, JdItem item) {
+                holder.getBinding().setVariable(BR.item, item);
+                holder.getBinding().setVariable(BR.itemPresenter, ItemPresenter);
+            }
+        };
+        jdAdapter.setItemPresenter(new JdBindPresenter());
+        binding.jdsView
+                .setLayoutManager(new GridLayoutManager(this, 6));
+        binding.jdsView
+                .setAdapter(jdAdapter);
+    }
     private void hzBind(List<HzItem> hzItems){
         BaseBindingAdapter hzAdapter = new BaseBindingAdapter<HzItem, ItemHzBinding>(hzItems,R.layout.item_hz) {
             @Override
@@ -438,7 +475,15 @@ public class MainBaseActivity extends Activity {
                 .setAdapter(rateAdapter);
 
     }
+    public  class JdBindPresenter implements IBaseBindingPresenter {
 
+        public void onClick(JdItem item) {
+            Log.i(TAG,item.getName());
+            hideMenu();
+            postMessage("click","jd-"+item.getId());
+
+        }
+    }
     public  class XjBindPresenter implements IBaseBindingPresenter {
 
         public void onClick(XjItem item) {

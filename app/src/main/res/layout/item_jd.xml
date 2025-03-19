@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <data>
+
+        <variable
+            name="itemPresenter"
+            type="com.vonchange.utao.gecko.MainBaseActivity.JdBindPresenter" />
+
+        <variable
+            name="item"
+            type="com.vonchange.utao.gecko.domain.JdItem" />
+    </data>
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <Button
+            android:id="@+id/jdItem"
+            android:textSize="@dimen/fontDefault"
+            android:textColor="@color/black"
+            android:tag="jdItem"
+            android:text="@{item.name}"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/login_btn_select"
+            android:focusable="true"
+            android:onClick="@{() -> itemPresenter.onClick(item)}"
+            android:padding="8dp"
+            android:layout_margin="8dp"/>
+    </LinearLayout>
+</layout>

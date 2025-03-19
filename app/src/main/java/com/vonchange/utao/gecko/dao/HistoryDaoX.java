@@ -52,6 +52,10 @@ public class HistoryDaoX {
             }
         }).start();
     }
+    public  static  List<History> queryHistory(Context context){
+        HistoryDao historyDao = AppDatabase.getInstance(context).historyDao();
+        return    historyDao.queryHistory();
+    }
     public  static  void update(Context context,String data){
         HistoryDao historyDao = AppDatabase.getInstance(context).historyDao();
         new Thread(new Runnable() {
