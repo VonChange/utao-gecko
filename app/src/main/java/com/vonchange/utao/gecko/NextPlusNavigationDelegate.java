@@ -8,12 +8,13 @@ import org.mozilla.geckoview.GeckoResult;
 import org.mozilla.geckoview.GeckoSession;
 import org.mozilla.geckoview.WebRequestError;
 
+
 public class NextPlusNavigationDelegate implements GeckoSession.NavigationDelegate {
     final String LOGTAG = "NextPlus";
     private Context context;
     private static  String lastUrl=null;
     private static  String rootUrl=null;
-    private static  String currentUrl=null;
+    public static  String currentUrl=null;
     public NextPlusNavigationDelegate(Context context){
         this.context = context;
     }
@@ -28,9 +29,9 @@ public class NextPlusNavigationDelegate implements GeckoSession.NavigationDelega
         String url=request.uri;
         currentUrl=url;
         if(url.startsWith("moz-extension")){
-            if(url.endsWith("index.html")){
+       /*     if(url.endsWith("index2.html")){
                 rootUrl=url;
-            }
+            }*/
             lastUrl=url;
         }
         return GeckoResult.fromValue(AllowOrDeny.ALLOW);
@@ -43,15 +44,8 @@ public class NextPlusNavigationDelegate implements GeckoSession.NavigationDelega
                 " error category=" + error.category +
                 " error=" + error.code);
         currentUrl="moz-extension://error.html";
+        // 检查是否为 SSL 证书错误
         return GeckoResult.fromValue("");
     }
-    public static String  backUrl(){
-        if(currentUrl.startsWith("moz-extension")){
-            if(currentUrl.endsWith("index.html")){
-                return null;
-            }
-            return rootUrl;
-        }
-        return lastUrl;
-    }
+
 }

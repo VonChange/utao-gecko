@@ -4,14 +4,9 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <data>
-        <import type="com.vonchange.utao.gecko.domain.DetailMenu"/>
         <variable
-            name="menu"
-            type="DetailMenu"/>
-        <import type="android.view.View" />
-        <variable
-            name="menuTitleHandler"
-            type="com.vonchange.utao.gecko.MainBaseActivity.MenuTitleHandler" />
+            name="live"
+            type="com.vonchange.utao.gecko.domain.live.Live" />
     </data>
     <FrameLayout
         android:id="@+id/webViewContainer"
@@ -21,198 +16,131 @@
             android:id="@+id/geckoview"
             android:layout_width="fill_parent"
             android:visibility="visible"
-            android:focusable="true"
+            android:focusable="false"
             android:focusableInTouchMode="false"
             android:layout_height="fill_parent"/>
         <LinearLayout
+            android:id="@+id/notify"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@android:color/transparent"
+            android:gravity="center"
+            android:focusable="false"
+            android:visibility="visible"
+            android:orientation="vertical">
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:background="#FAF9DE"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:layout_height="wrap_content">
+                <TextView
+                    android:id="@+id/liveName"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="@dimen/fontDefault"
+                    android:textColor="@color/black"
+                    />
+            </LinearLayout>
+
+        </LinearLayout>
+        <!-- 菜单容器 -->
+        <LinearLayout
+            android:id="@+id/menuContainer"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:background="#00000000"
-            android:orientation="vertical"
-            android:clickable="true"
-            android:focusable="true"
             android:visibility="gone"
-            android:id="@+id/tvMenu">
-            <LinearLayout
-                android:id="@+id/tvMenuTitle"
-                style="?android:attr/buttonBarStyle"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_margin="8dp">
-                <LinearLayout
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:orientation="vertical"
-                    android:visibility="visible"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content">
-                    <Button
-                        style="?android:attr/button"
-                        android:id="@+id/xjBtn"
-                        android:tag="menu_xj"
-                        android:textSize="@dimen/fontDefault"
-                        android:textColor="@color/black"
-                        android:text="@{menu.video?@string/xj:@string/zb}"
-                        android:layout_margin="8dp"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:background="@drawable/login_btn_select"
-                        android:focusable="true"
-                        android:padding="8dp" />
-                </LinearLayout>
-                <LinearLayout
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:orientation="vertical"
-                    android:layout_width="wrap_content"
-                    android:visibility="@{(menu.video&amp;&amp;menu.xjs.size>0&amp;&amp;(menu.now.xj.index+1)&lt;menu.xjs.size)?View.VISIBLE:View.GONE}"
-                    android:layout_height="wrap_content">
-                    <Button
-                        android:id="@+id/nextBtn"
-                        android:tag="menu_next"
-                        android:text="@string/next"
-                        android:onClick="@{()->menuTitleHandler.nextBtn()}"
+            android:clickable="true"
+            android:focusable="true">
 
-                        android:textSize="@dimen/fontDefault"
-                        android:textColor="@color/black"
-                        android:layout_margin="8dp"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:background="@drawable/login_btn_select"
-                        android:focusable="true"
-                        android:padding="8dp" />
-                </LinearLayout>
+            <LinearLayout
+                android:layout_width="240dp"
+                android:layout_height="match_parent"
+                android:layout_gravity="start"
+                android:background="#80000000"
+                android:orientation="vertical">
+
+                <!-- 省份标题栏 -->
                 <LinearLayout
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:orientation="vertical"
-                    android:layout_width="wrap_content"
-                    android:visibility="@{(menu.video&amp;&amp;menu.jds.size>0)?View.VISIBLE:View.GONE}"
-                    android:layout_height="wrap_content">
-                    <Button
-                        android:id="@+id/jdBtn"
-                        android:tag="menu_jd"
-                        android:text="@string/jd"
-                        android:textSize="@dimen/fontDefault"
-                        android:textColor="@color/black"
-                        android:layout_margin="8dp"
-                        android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <!-- 左右切换按钮区域 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:background="@drawable/login_btn_select"
-                        android:focusable="true"
-                        android:padding="8dp" />
-                </LinearLayout>
-                <LinearLayout
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:orientation="vertical"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content">
-                    <Button
-                        style="?android:attr/button"
-                        android:id="@+id/hzBtn"
-                        android:textSize="@dimen/fontDefault"
-                        android:textColor="@color/black"
-                        android:tag="menu_hz"
-                        android:text="@{@string/hz+menu.now.hz.name}"
-                        android:layout_width="wrap_content"
+                        android:orientation="horizontal">
+
+                        <Button
+                            android:id="@+id/prevProvince"
+                            android:layout_width="0dp"
+                            android:layout_height="48dp"
+                            android:layout_weight="1"
+                            android:text="←"
+                            android:textSize="20sp"
+                            android:textColor="#FFFFFF"
+                            android:background="#80000000"
+                            android:focusable="false"/>
+
+                        <Button
+                            android:id="@+id/nextProvince"
+                            android:layout_width="0dp"
+                            android:layout_height="48dp"
+                            android:layout_weight="1"
+                            android:text="→"
+                            android:textSize="20sp"
+                            android:textColor="#FFFFFF"
+                            android:background="#80000000"
+                            android:focusable="false"/>
+
+                    </LinearLayout>
+
+                    <!-- 省份名称显示区域 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:focusable="true"
-                        android:layout_margin="8dp"
-                        android:visibility="visible"
-                        android:background="@drawable/login_btn_select"
-                        android:padding="8dp" />
+                        android:padding="8dp"
+                        android:gravity="center">
+
+                        <TextView
+                            android:id="@+id/provinceName"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:gravity="center"
+                            android:textColor="#FFFFFF"
+                            android:textSize="20sp"/>
+
+                        <TextView
+                            android:id="@+id/provinceCount"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:gravity="center"
+                            android:textColor="#FFFFFF"
+                            android:textSize="16sp"/>
+
+                    </LinearLayout>
+
                 </LinearLayout>
-                <LinearLayout
+
+                <!-- 频道列表 -->
+                <ListView
+                    android:id="@+id/channelList"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
                     android:layout_weight="1"
-                    android:gravity="center"
-                    android:orientation="vertical"
-                    android:layout_width="wrap_content"
-                    android:visibility="@{menu.rates.size>0?View.VISIBLE:View.GONE}"
-                    android:layout_height="wrap_content">
-                    <Button
-                        style="?android:attr/button"
-                        android:id="@+id/rateBtn"
-                        android:tag="menu_rate"
-                        android:textSize="@dimen/fontDefault"
-                        android:textColor="@color/black"
-                        android:text="@{@string/rate+menu.now.rate.name}"
-                        android:layout_margin="8dp"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:background="@drawable/login_btn_select"
-                        android:focusable="true"
-                        android:padding="8dp" />
-                </LinearLayout>
-                <LinearLayout
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:orientation="vertical"
-                    android:layout_width="wrap_content"
-                    android:visibility="visible"
-                    android:layout_height="wrap_content">
-                    <Button
-                        android:id="@+id/reloadBtn"
-                        android:tag="menu_reload"
-                        android:text="@string/reload"
-                        android:onClick="@{()->menuTitleHandler.reloadBtn()}"
-                        android:textSize="@dimen/fontDefault"
-                        android:textColor="@color/black"
-                        android:layout_margin="8dp"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:background="@drawable/login_btn_select"
-                        android:focusable="true"
-                        android:padding="8dp" />
-                </LinearLayout>
+                    android:divider="#33FFFFFF"
+                    android:dividerHeight="1dp"
+                    android:listSelector="@drawable/menu_button_background"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:descendantFocusability="afterDescendants"/>
 
             </LinearLayout>
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/jds_view"
-                android:visibility="@{menu.tab.equals(`jd`)?View.VISIBLE:View.GONE}"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"/>
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/hzs_view"
-                android:visibility="@{menu.tab.equals(`hz`)?View.VISIBLE:View.GONE}"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"/>
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/xjs_view"
-                android:visibility="@{menu.tab.equals(`xj`)?View.VISIBLE:View.GONE}"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"/>
-
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/rates_view"
-                android:visibility="@{menu.tab.equals(`rate`)?View.VISIBLE:View.GONE}"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"/>
-        </LinearLayout>
-        <LinearLayout
-            android:id="@+id/loading"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:background="#E3EDCD"
-            android:focusable="false"
-            android:gravity="center"
-            android:visibility="gone"
-            android:orientation="vertical">
-            <ProgressBar
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:indeterminate="true" />
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textSize="@dimen/fontDefault"
-                android:textColor="@color/black"
-                android:text="油桃投屏启动中。。。从此无需电视端VIP！"
-                android:layout_marginTop="16dp" />
         </LinearLayout>
     </FrameLayout>
+
 
 
 </layout>

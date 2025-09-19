@@ -1,39 +1,37 @@
 package com.vonchange.utao.gecko;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.pm.ActivityInfo;
 import android.content.res.AssetManager;
+import android.graphics.Color;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
-import android.view.ViewTreeObserver;
+import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.AbsListView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.LinearLayout;
+import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.databinding.DataBindingUtil;
-import androidx.recyclerview.widget.GridLayoutManager;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 
 import com.vonchange.utao.gecko.api.ConfigApi;
 import com.vonchange.utao.gecko.databinding.ActivityMainBinding;
-import com.vonchange.utao.gecko.databinding.ItemHzBinding;
-import com.vonchange.utao.gecko.databinding.ItemJdBinding;
-import com.vonchange.utao.gecko.databinding.ItemRateBinding;
-import com.vonchange.utao.gecko.databinding.ItemXjBinding;
-import com.vonchange.utao.gecko.domain.DetailMenu;
-import com.vonchange.utao.gecko.domain.HzItem;
-import com.vonchange.utao.gecko.domain.JdItem;
-import com.vonchange.utao.gecko.domain.RateItem;
-import com.vonchange.utao.gecko.domain.XjItem;
-import com.vonchange.utao.gecko.impl.BaseBindingAdapter;
-import com.vonchange.utao.gecko.impl.BaseViewHolder;
-import com.vonchange.utao.gecko.impl.IBaseBindingPresenter;
-import com.vonchange.utao.gecko.util.JsonUtil;
-import com.yanzhenjie.andserver.AndServer;
-import com.yanzhenjie.andserver.Server;
+import com.vonchange.utao.gecko.domain.live.Live;
+import com.vonchange.utao.gecko.domain.live.Vod;
+import com.vonchange.utao.gecko.service.UpdateService;
+import com.vonchange.utao.gecko.util.LogUtil;
+import com.vonchange.utao.gecko.util.ToastUtils;
+import com.vonchange.utao.gecko.util.ValueUtil;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -45,9 +43,11 @@ import org.mozilla.geckoview.GeckoSessionSettings;
 import org.mozilla.geckoview.GeckoView;
 import org.mozilla.geckoview.WebExtension;
 
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Method;
+import java.net.URLDecoder;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 public class MainBaseActivity extends Activity {
     private static String TAG="MainBaseActivity";
@@ -62,39 +62,366 @@ public class MainBaseActivity extends Activity {
     private static final String EXTENSION_VERSION = "1.0";
     private  static WebExtension.Port webPort;
     protected ActivityMainBinding binding;
+    private Context thisContext;
+    private static Vod currentLive = null;
+    private List<Live> provinces = new ArrayList<>();
+    private int currentProvinceIndex = 0;
+    private static boolean isMenuShow=false;
+    private static String  baseUrl;
     //@SuppressLint("WrongThread")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         requestWindowFeature(Window.FEATURE_NO_TITLE);//隐藏标题栏
-        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM);
+        // 强制横屏
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
-        //setContentView(R.layout.activity_main);
-        //binding = DataBindingUtil.setContentView(this, R.layout.activity_main);
         bind();
         ConfigApi.syncLogData(this);
-        startHttp();
+        UpdateService.initTvData();
+        thisContext=this;
+        if(null==currentLive){
+            currentLive = currentChannel(this);
+            //UpdateService.getByKey("0_0");
+        }
+        if(null==currentLive){
+            ToastUtils.show(this,"获取数据错误 请重启", Toast.LENGTH_SHORT);
+            //finish();
+            return;
+        }
+        initData();
         view = binding.geckoview;
         preInitWebView();
         session.setNavigationDelegate(new NextPlusNavigationDelegate(this));
+        progress();
         view.setSession(session);
-
+        ToastUtils.show(this,"遥控器上下左右可快速切台",Toast.LENGTH_SHORT);
+        // 或者如果使用旧的 ActionBar
+        if (getActionBar() != null) {
+            getActionBar().hide();
+        }
         //extension.setMessageDelegate(messageDelegate, "browser"),
         //file://android_asset/index.html resource://android/assets/tv-web/index.html
        // session.loadUri(webExtension.metaData.baseUrl+"index.html"); // Or any other URL...
     }
+    private void progress(){
+        session.setProgressDelegate(new GeckoSession.ProgressDelegate() {
+            @Override
+            public void onProgressChange(GeckoSession session, int progress) {
+                // progress 为当前加载进度（0-100）
+                Log.d("GeckoProgress", "加载进度：" + progress + "%");
+                // 可在此更新 UI（如进度条）
+                isMenuShow=false;
+                String url= NextPlusNavigationDelegate.currentUrl;
+                try {
+                    url=  URLDecoder.decode(url, "UTF-8");
+                } catch (UnsupportedEncodingException e) {
+                }
+                if(url.startsWith("moz-extension")){
+                    url=url.replace("moz-extension://","");
+                    url=url.substring(url.indexOf("/")+1);
+                }
+                LogUtil.i(TAG,"onProgressChangedX"+url);
+                Vod vod = UpdateService.getByUrl(url);
+                if(null!=vod){
+                    currentLive=vod;
+                    binding.liveName.setText(currentLive.getName()+" "+progress+"%");
+                }
+                if(progress==100){
+                    updateChannel(thisContext,url);
+                    handler.sendMessageDelayed (handler.obtainMessage(2, "noText"),1000);
+                }
+            }
 
-    public void startHttp(){
-        Server server = AndServer.webServer(this)
-                .port(8088)
-                .timeout(10, TimeUnit.SECONDS)
-                .build();
-// startup the server.
-        server.startup();
+            @Override
+            public void onPageStart(GeckoSession session, String url) {
+                // 页面开始加载时触发（进度开始）
+            }
+
+            @Override
+            public void onPageStop(GeckoSession session, boolean success) {
+                // 页面加载结束时触发（成功/失败）
+                if (success) {
+                    Log.d("GeckoProgress", "加载完成");
+                }
+            }
+        });
+    }
+    public static Vod currentChannel(Context context){
+        String tvUrl=  ValueUtil.getString(context,"tvUrl");
+        if(null==tvUrl){
+            return UpdateService.getByKey("0_0");
+        }
+        Vod vod= UpdateService.getByUrl(tvUrl);
+        if(null==vod){
+            return UpdateService.getByKey("0_0");
+        }
+        return vod;
+    }
+    public static void updateChannel(Context context, String url){
+        Vod vod = UpdateService.getByUrl(url);
+        if(null==vod||null==vod.getUrl()){
+            return;
+        }
+        LogUtil.i(TAG,vod.getName()+vod.getUrl());
+        ValueUtil.putString(context,"tvUrl",vod.getUrl());
     }
 
+    private void initData() {
+        // 使用异步任务加载数据
+        new Thread(() -> {
+            // 在后台线程执行耗时操作
+            List<Live> result = UpdateService.getByLives();
 
+            // 在UI线程更新界面
+            runOnUiThread(() -> {
+                provinces = result;
+                currentProvinceIndex = currentLive.getTagIndex();
+                showCurrentProvince();
+            });
+        }).start();
+    }
+    private void showCurrentProvince() {
+        if (provinces == null || provinces.isEmpty()) {
+            // 处理空数据情况
+            binding.provinceName.setText("无数据");
+            setupChannelList(new ArrayList<>());
+            return;
+        }
 
+        // 确保索引在有效范围内
+        if (currentProvinceIndex < 0) {
+            currentProvinceIndex = 0;
+        } else if (currentProvinceIndex >= provinces.size()) {
+            currentProvinceIndex = provinces.size() - 1;
+        }
+
+        Live currentProvince = provinces.get(currentProvinceIndex);
+        binding.provinceName.setText(currentProvince.getName() + "(" + currentProvince.getVods().size() + ")");
+        setupChannelList(currentProvince.getVods());
+    }
+    private void setupChannelList(List<Vod> channels) {
+        ArrayAdapter<Vod> adapter = new ArrayAdapter<Vod>(this, android.R.layout.simple_list_item_1, channels) {
+            @NonNull
+            @Override
+            public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
+                Button btn;
+                if (convertView == null) {
+                    btn = new Button(getContext());
+                    btn.setLayoutParams(new AbsListView.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            ViewGroup.LayoutParams.WRAP_CONTENT));
+                    btn.setTextColor(Color.WHITE);
+                    btn.setTextSize(16);
+                    btn.setPadding(24, 16, 24, 16);
+                    btn.setBackgroundResource(R.drawable.menu_button_background);
+                    btn.setClickable(false);
+                    btn.setFocusable(false);
+                } else {
+                    btn = (Button) convertView;
+
+                    if (!(btn.getLayoutParams() instanceof AbsListView.LayoutParams)) {
+                        btn.setLayoutParams(new AbsListView.LayoutParams(
+                                ViewGroup.LayoutParams.MATCH_PARENT,
+                                ViewGroup.LayoutParams.WRAP_CONTENT));
+                    }
+                }
+
+                Vod channel = getItem(position);
+                if (channel != null) {
+                    btn.setText(channel.getName());
+                }
+
+                return btn;
+            }
+        };
+        binding.channelList.setAdapter(adapter);
+        binding.channelList.setOnItemClickListener((parent, view, position, id) -> {
+            try {
+                Vod channel = channels.get(position);
+                if (channel.getUrl() != null) {
+                    currentLive = channel;
+                    // 在主线程中执行WebView操作
+                    runOnUiThread(() -> {
+                        try {
+                            LogUtil.i(TAG, "Loading URL in WebView: " + channel.getUrl());
+                            loadUrl(channel.getUrl());
+                            LogUtil.i(TAG, "URL loaded successfully");
+                        } catch (Exception e) {
+                            LogUtil.e(TAG, "Error loading URL in WebView: " + e.getMessage());
+                            e.printStackTrace();
+                        }
+                    });
+
+                    // 更新历史记录
+                    updateChannel(thisContext, channel.getUrl());
+
+                    // 显示提示
+                    showToast(channel.getName(), this);
+
+                    // 隐藏菜单
+                    hideMenu();
+                } else {
+                    LogUtil.e(TAG, "Channel or URL is null");
+                }
+            } catch (Exception e) {
+                LogUtil.e(TAG, "Error handling channel click: " + e.getMessage());
+                e.printStackTrace();
+            }
+        });
+    }
+
+    protected void showMenu() {
+        binding.menuContainer.setVisibility(View.VISIBLE);
+        isMenuShow = true;
+        showCurrentProvince();
+        setupProvinceButtons();
+        // 默认选中第一个频道
+        if (binding.channelList.getAdapter() != null && binding.channelList.getCount() > 0) {
+            binding.channelList.setSelection(0);
+            binding.channelList.requestFocus();
+        }
+
+        // 点击空白处关闭菜单
+        binding.menuContainer.setOnClickListener(v -> hideMenu());
+    }
+    public boolean dispatchKeyEvent(KeyEvent event) {
+        if (event.getAction() == KeyEvent.ACTION_UP) {
+            return super.dispatchKeyEvent(event);
+        }
+        int keyCode = event.getKeyCode();
+        LogUtil.i("keyDown keyCode ", keyCode+" event" + event);
+        boolean isMenuShow=isMenuShow();
+        if(isMenuShow){
+            if(keyCode==KeyEvent.KEYCODE_BACK||keyCode==KeyEvent.KEYCODE_MENU||keyCode==KeyEvent.KEYCODE_TAB){
+                hideMenu();
+                return true;
+            }
+            if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT || keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) {
+                if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) {
+                    currentProvinceIndex--;
+                    if (currentProvinceIndex < 0) {
+                        currentProvinceIndex = provinces.size() - 1;
+                    }
+                } else {
+                    currentProvinceIndex++;
+                    if (currentProvinceIndex >= provinces.size()) {
+                        currentProvinceIndex = 0;
+                    }
+                }
+                showCurrentProvince();
+                return true;
+            }
+            return super.dispatchKeyEvent(event);
+        }
+        if(keyCode==KeyEvent.KEYCODE_MENU|| keyCode == KeyEvent.KEYCODE_TAB||keyCode==KeyEvent.KEYCODE_DPAD_CENTER||keyCode==KeyEvent.KEYCODE_ENTER){
+            showMenu();
+            return true;
+        }
+
+        if (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) {
+            return goNext("right");
+        }
+        if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) {
+            return goNext("left");
+        }
+        if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN) {
+            return goNext("down");
+        }
+        if (keyCode == KeyEvent.KEYCODE_DPAD_UP) {
+            return goNext("up");
+        }
+        if (keyCode == KeyEvent.KEYCODE_BACK) {
+            keyBack();
+            return true;
+        }
+        return super.dispatchKeyEvent(event);
+    }
+    private long mClickBackTime = 0;
+    private boolean keyBack(){
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - mClickBackTime < 3000) {
+            //killAppProcess();
+            finish();
+            //super.onBackPressed();
+            System.exit(0);
+        } else {
+            Toast.makeText(this, "再按一次返回键退出", Toast.LENGTH_SHORT).show();
+            mClickBackTime = currentTime;
+        }
+        return true;
+    }
+    // 在 Handler 对象中处理消息
+    private Handler handler = new Handler(Looper.getMainLooper()) {
+        @Override
+        public void handleMessage(@NonNull Message msg) {
+            super.handleMessage(msg);
+            switch (msg.what) {
+                case 1:
+                    String messageContent = (String) msg.obj;
+                    // 处理接收到的消息（例如，显示 Toast）
+                    if(currentLive.getKey().equals(messageContent)){
+                        if (session != null) {
+                            loadUrl(currentLive.getUrl());
+                        }
+                        //记录到db
+                    }
+                    break;
+                case 2:
+                    binding.liveName.setText("");
+                    break;
+            }
+        }
+    };
+    private void loadUrl(String url){
+        if(!url.startsWith("http")){
+            url=baseUrl+url;
+        }
+        session.loadUri(url);
+    }
+    private boolean goNext(String nextType){
+        if(null==currentLive){
+            currentLive = UpdateService.getByKey("0_0");
+        }
+        String key= UpdateService.liveNext(currentLive.getTagIndex(),currentLive.getDetailIndex(),nextType);
+        currentLive = UpdateService.getByKey(key);
+        if(null!=currentLive){
+            //延迟1s
+            showToast(currentLive.getName(),this);
+            String liveKey=currentLive.getKey();
+            handler.sendMessageDelayed (handler.obtainMessage(1, liveKey),1000);
+
+        }
+        return true;
+    }
+    protected   void showToast(String text, Context context){
+        binding.liveName.setText(text);
+        //showToastOrg(text,context);
+    }
+    private void setupProvinceButtons() {
+        binding.prevProvince.setOnClickListener(v -> {
+            currentProvinceIndex--;
+            if (currentProvinceIndex < 0) {
+                currentProvinceIndex = provinces.size() - 1;
+            }
+            showCurrentProvince();
+        });
+
+        binding.nextProvince.setOnClickListener(v -> {
+            currentProvinceIndex++;
+            if (currentProvinceIndex >= provinces.size()) {
+                currentProvinceIndex = 0;
+            }
+            showCurrentProvince();
+        });
+    }
+
+    protected void hideMenu() {
+        binding.menuContainer.setVisibility(View.GONE);
+        isMenuShow = false;
+        binding.menuContainer.setOnClickListener(null);
+    }
     private AssetManager createAssetManager(String skinFilePath) {
         try {
             AssetManager assetManager = AssetManager.class.newInstance();
@@ -108,9 +435,7 @@ public class MainBaseActivity extends Activity {
     }
     private void bind(){
         binding = DataBindingUtil.setContentView(this, R.layout.activity_main);
-        binding.setMenuTitleHandler(new MenuTitleHandler());
         //webViewFocusChange();
-        focusChange();
     }
     private  void webViewFocusChange(){
         binding.geckoview.setOnFocusChangeListener(new View.OnFocusChangeListener() {
@@ -123,32 +448,13 @@ public class MainBaseActivity extends Activity {
 
 
     protected  boolean isMenuShow(){
-        int visible=  binding.tvMenu.getVisibility();
+        int visible=  binding.menuContainer.getVisibility();
         if(visible== View.VISIBLE){
-           return true;
+            return true;
         }
         return false;
     }
-    protected void showMenu(String data){
-        binding.geckoview.setFocusable(false);
-        //binding.tvMenu.setFocusable(true);
-        Log.i(TAG,"data:: "+data);
-        DetailMenu detailMenu = JsonUtil.fromJson(data,DetailMenu.class);
-        binding.setMenu(detailMenu);
-        xjBlind(detailMenu.getXjs());
-        jdBlind(detailMenu.getJds());
-        hzBind(detailMenu.getHzs());
-        rateBind(detailMenu.getRates());
-        //binding.nextBtn.setBackgroundResource(R.drawable.btnsel);
-        binding.xjBtn.requestFocus();
-        binding.tvMenu.setVisibility(View.VISIBLE);
-        //binding.tvMenu.setFocusable(false);
-    }
 
-    protected void hideMenu(){
-        binding.tvMenu.setVisibility(View.GONE);
-        binding.geckoview.setFocusable(true);
-    }
 
 
 
@@ -235,7 +541,7 @@ public class MainBaseActivity extends Activity {
                 //.setAboutConfigEnabled(true)
                 .setAllowInsecureConnections(GeckoRuntimeSettings.ALLOW_ALL)
                 //.setAutomaticFontSizeAdjustment(true)
-                //.setRemoteDebuggingEnabled(true)
+                .setRemoteDebuggingEnabled(true)
                 .setFontInflationEnabled(true)
                 .setWebFontsEnabled(true);
         //.setExtensionsProcessEnabled(true)
@@ -251,9 +557,10 @@ public class MainBaseActivity extends Activity {
                             runOnUiThread(() -> {
                                 assert extension != null;
                                 extension.setMessageDelegate(messageDelegate, "browser");
-                                session.loadUri(
-                                        extension.metaData.baseUrl+"index.html");
-                                binding.loading.setVisibility(View.GONE);
+                                //"https://tv.cctv.com/live/cctv13/" "https://www.gdtv.cn/tvChannelDetail/43"
+                                baseUrl= extension.metaData.baseUrl;
+                                loadUrl(currentLive.getUrl());
+                                //extension.metaData.baseUrl+"index.html"
                             });
                         },
                         e -> Log.e(TAG, "Error registering WebExtension", e)
@@ -271,6 +578,7 @@ public class MainBaseActivity extends Activity {
        // session.getWebExtensionController()
         //GeckoSession.PermissionDelegate.PERMISSION_MEDIA_KEY_SYSTEM_ACCESS
         session.setPermissionDelegate(new GeckoSession.PermissionDelegate() {
+
             @Override
             public void onMediaPermissionRequest(GeckoSession session, String uri, MediaSource[] video, MediaSource[] audio, MediaCallback callback) {
                 Log.i("gecko", "Media Permission Needed" + uri);
@@ -285,7 +593,6 @@ public class MainBaseActivity extends Activity {
                 // GeckoSession.PermissionDelegate.super.onContentPermissionRequest(session, uri, type, callback);
                 return GeckoResult.fromValue(ContentPermission.VALUE_ALLOW);
             }
-
            /*   @Override
               public void onContentPermissionRequest(GeckoSession session, String uri, int type,  Callback callback ) {
                   Log.i("gecko", "nContentPermission Permission Needed "+uri+" "+type);
@@ -322,207 +629,5 @@ public class MainBaseActivity extends Activity {
         return  tagObj.toString();
     }
 
-    private void focusChange() {
-        View view = binding.tvMenu;
-        view.getViewTreeObserver().addOnGlobalFocusChangeListener(new ViewTreeObserver.OnGlobalFocusChangeListener() {
-            @Override
-            public void onGlobalFocusChanged(View oldFocus, View newFocus) {
-                Log.d(TAG, "onGlobalFocusChanged: oldFocus=" + oldFocus);
-                Log.d(TAG, "onGlobalFocusChanged: newFocus=" + newFocus);
-                //lastFocus=oldFocus;nowFocus=newFocus;
-                Button focusBtn=defaultFocusBtn(oldFocus,newFocus);
-                if(null==focusBtn){return;}
-                Object tagObj=focusBtn.getTag();
-                if(null==tagObj){return;}
-                String tag= tagObj.toString();
-                Log.d(TAG, "onGlobalFocusChanged: newFocus=" + tag);
-                if(tag.startsWith("menu_")){
-                    tag=tag.substring(5);
-                    binding.getMenu().setTab(tag);
-                }
-                String oldTag=null;
-                switch (tag){
-                    case "hzItem":
-                        focusBtn.setNextFocusUpId(R.id.hzBtn);
-                        oldTag=oldBtnTag(oldFocus);
-                        if(null!=oldTag){
-                            if(oldTag.equals("menu_hz")){
-                                RecyclerView.ViewHolder viewHolder = binding.hzsView.findViewHolderForLayoutPosition(0);
-                                if(null!=viewHolder){
-                                    viewHolder.itemView.requestFocus();
-                                }
-                            }
-                        }
-                        break;
-                    case "rateItem":
-                        focusBtn.setNextFocusUpId(R.id.rateBtn);
-                        oldTag=oldBtnTag(oldFocus);
-                        if(null!=oldTag){
-                            if(oldTag.equals("menu_rate")){
-                                RecyclerView.ViewHolder viewHolder = binding.ratesView.findViewHolderForLayoutPosition(0);
-                                if(null!=viewHolder){
-                                    viewHolder.itemView.requestFocus();
-                                }
-                            }
-                        }
-                        break;
-                    case "jdItem":
-                        LinearLayout layoutJd = (LinearLayout) focusBtn.getParent();
-                        RecyclerView.LayoutParams paramsJd = (RecyclerView.LayoutParams) layoutJd.getLayoutParams();
-                        int itemPositionJd = paramsJd.getViewLayoutPosition();
-                        if(itemPositionJd<6){
-                            focusBtn.setNextFocusUpId(R.id.jdBtn);
-                        }
-                        oldTag=oldBtnTag(oldFocus);
-                        if(null!=oldTag){
-                            if(oldTag.equals("menu_jd")){
-                                RecyclerView.ViewHolder viewHolder = binding.jdsView.findViewHolderForLayoutPosition(0);
-                                if(null!=viewHolder){
-                                    viewHolder.itemView.requestFocus();
-                                }
-                            }
-                        }
-                        break;
-                    case "xjItem":
-                        LinearLayout layout = (LinearLayout) focusBtn.getParent();
-                        RecyclerView.LayoutParams params = (RecyclerView.LayoutParams) layout.getLayoutParams();
-                        int itemPosition = params.getViewLayoutPosition();
-                        if(itemPosition<6){
-                            focusBtn.setNextFocusUpId(R.id.xjBtn);
-                        }
-                        Log.d(TAG, "xjItem: index=" + itemPosition);
-                        oldTag=oldBtnTag(oldFocus);
-                        if(null!=oldTag){
-                            //old上一个是选集btn 下一个是item 自动选择
-                            if(oldTag.equals("menu_xj")){
-                                int id =  binding.xjsView.getLayoutManager().getItemCount();
-                                Log.i(TAG,"count "+ id+" "+ binding.xjsView.getChildCount()+" "+binding.xjsView.getAdapter().getItemCount());
-                                int viewCount= binding.xjsView.getChildCount();
-                                int num=binding.getMenu().getNow().getXj().getIndex();
-                                if(num>viewCount){
-                                    num=viewCount-1;
-                                }
-                                RecyclerView.ViewHolder viewHolder = binding.xjsView.findViewHolderForLayoutPosition(num);
-                                if(null!=viewHolder){
-                                    viewHolder.itemView.requestFocus();
-                                }
-                            }
-                        }
-                        break;
-                    default:
-                        Log.i(TAG,"setTab"+tag);
-                        break;
-                }
-            }
-        });
-    }
-
-    private void xjBlind(List<XjItem> xjItems){
-        BaseBindingAdapter xjAdapter = new BaseBindingAdapter<XjItem, ItemXjBinding>(xjItems,R.layout.item_xj) {
-            @Override
-            public void doBindViewHolder(BaseViewHolder<ItemXjBinding> holder, XjItem item) {
-                holder.getBinding().setVariable(BR.item, item);
-                holder.getBinding().setVariable(BR.itemPresenter, ItemPresenter);
-            }
-        };
-        xjAdapter.setItemPresenter(new XjBindPresenter());
-        binding.xjsView
-                .setLayoutManager(new GridLayoutManager(this, 6));
-        binding.xjsView
-                .setAdapter(xjAdapter);
-    }
-    private void jdBlind(List<JdItem> jdItems){
-        BaseBindingAdapter jdAdapter = new BaseBindingAdapter<JdItem, ItemJdBinding>(jdItems,R.layout.item_jd) {
-            @Override
-            public void doBindViewHolder(BaseViewHolder<ItemJdBinding> holder, JdItem item) {
-                holder.getBinding().setVariable(BR.item, item);
-                holder.getBinding().setVariable(BR.itemPresenter, ItemPresenter);
-            }
-        };
-        jdAdapter.setItemPresenter(new JdBindPresenter());
-        binding.jdsView
-                .setLayoutManager(new GridLayoutManager(this, 6));
-        binding.jdsView
-                .setAdapter(jdAdapter);
-    }
-    private void hzBind(List<HzItem> hzItems){
-        BaseBindingAdapter hzAdapter = new BaseBindingAdapter<HzItem, ItemHzBinding>(hzItems,R.layout.item_hz) {
-            @Override
-            public void doBindViewHolder(BaseViewHolder<ItemHzBinding> holder, HzItem item) {
-                holder.getBinding().setVariable(BR.item, item);
-                holder.getBinding().setVariable(BR.itemPresenter, ItemPresenter);
-            }
-        };
-        hzAdapter.setItemPresenter(new HzBindPresenter());
-        binding.hzsView
-                .setLayoutManager(new LinearLayoutManager(this,LinearLayoutManager.HORIZONTAL,false));
-        binding.hzsView
-                .setAdapter(hzAdapter);
-    }
-
-    private void rateBind(List<RateItem> rateItems){
-        BaseBindingAdapter rateAdapter = new BaseBindingAdapter<RateItem, ItemRateBinding>(rateItems,R.layout.item_rate) {
-            @Override
-            public void doBindViewHolder(BaseViewHolder<ItemRateBinding> holder, RateItem item) {
-                holder.getBinding().setVariable(BR.item, item);
-                holder.getBinding().setVariable(BR.itemPresenter, ItemPresenter);
-            }
-        };
-        rateAdapter.setItemPresenter(new RateBindPresenter());
-        binding.ratesView
-                .setLayoutManager(new LinearLayoutManager(this,LinearLayoutManager.HORIZONTAL,false));
-        binding.ratesView
-                .setAdapter(rateAdapter);
-
-    }
-    public  class JdBindPresenter implements IBaseBindingPresenter {
-
-        public void onClick(JdItem item) {
-            Log.i(TAG,item.getName());
-            hideMenu();
-            postMessage("click","jd-"+item.getId());
-
-        }
-    }
-    public  class XjBindPresenter implements IBaseBindingPresenter {
-
-        public void onClick(XjItem item) {
-            Log.i(TAG,item.getTitle());
-            //TestActivity.binding.getMenu().getNow().setXj(item);
-            hideMenu();
-            postMessage("click","xj-"+item.getId());
-
-        }
-    }
-
-    public    class HzBindPresenter implements IBaseBindingPresenter {
-
-        public void onClick(HzItem item) {
-            Log.i(TAG,item.getName());
-            hideMenu();
-            postMessage("click","hz-"+item.getId());
-
-        }
-    }
-    public  class RateBindPresenter implements IBaseBindingPresenter {
-
-        public void onClick(RateItem item) {
-            Log.i(TAG,item.getName());
-            hideMenu();
-            postMessage("click","rate-"+item.getId());
-
-        }
-    }
-    public  class MenuTitleHandler {
-
-        public void nextBtn() {
-            hideMenu();
-            postMessage("click","tv-next");
-        }
-        public void reloadBtn() {
-             hideMenu();
-             session.reload();
-        }
-    }
 
 }

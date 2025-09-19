@@ -14,8 +14,8 @@ ext{
     geckoviewChannel = ""
     //79.0.20200813192915 89.0.20210614221319(可自动播放16 声音自动) 99.0.20220411174855  109.0.20230127170202
     //115.0.20230726201356 117.0.20230912013654 118.0.20231009140911(自动播放Override不一样 最高4.1)
-    //119.0.20231108221453(21)  119.0.20231016204538(21) 130.0.20240913135723
-    geckoviewVersion = "118.0.20231009140911"
+    //119.0.20231108221453(21)  119.0.20231016204538(21) 130.0.20240913135723 140.0.20250616215311 139.0.20250609112858
+    geckoviewVersion = "141.0.20250714153642"
     rxhttp_version = "3.2.6"
     okhttp_version = "3.12.13"
     room_version = "2.6.1"
@@ -23,7 +23,7 @@ ext{
 }
 android {
     namespace 'com.vonchange.utao.gecko'
-    compileSdk 34
+    compileSdk 35
     configurations {
         all {
             //exclude group: 'com.android.support', module: 'support-v4'
@@ -36,11 +36,11 @@ android {
     defaultConfig {
         multiDexEnabled true
         applicationId "com.vonchange.utao.gecko"
-        minSdk 16
-        //noinspection ExpiredTargetSdkVersion
+        minSdk 21
+        //noinspection ExpiredTargetSdkVersion 16 28
         targetSdk 28
-        versionCode 3
-        versionName "2025年03月08日"
+        versionCode 5
+        versionName "2025年08月03日"
         ndk {
             abiFilters "armeabi-v7a"//"armeabi-v7a","x86" arm64-v8a ""armeabi-v7a"// arm64-v8a、armeabi-v7a、x86_64、x86 中的一个或多个
         }
@@ -83,7 +83,6 @@ android {
             }
     }
 }
-apply plugin: 'com.yanzhenjie.andserver'
 dependencies {
    // implementation 'androidx.leanback:leanback:1.0.0'
     implementation "org.mozilla.geckoview:geckoview${geckoviewChannel}:${geckoviewVersion}"
@@ -95,8 +94,6 @@ dependencies {
     implementation 'com.google.code.gson:gson:2.8.9'
     implementation "com.squareup.okhttp3:okhttp:$okhttp_version"
     implementation 'androidx.multidex:multidex:2.0.1'
-    implementation "com.yanzhenjie.andserver:api:${andserver_version}"
-    annotationProcessor "com.yanzhenjie.andserver:processor:$andserver_version"
     //implementation libs.appcompat
    // implementation libs.material
     testImplementation libs.junit

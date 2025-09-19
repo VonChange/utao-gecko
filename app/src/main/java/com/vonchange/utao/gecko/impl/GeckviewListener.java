@@ -10,7 +10,7 @@ import org.mozilla.geckoview.WebExtension;
 import org.mozilla.geckoview.WebExtensionController;
 
 public class GeckviewListener implements WebExtensionController.PromptDelegate {
-    @Override
+    //@Override
     public GeckoResult<AllowOrDeny> onInstallPrompt(final @NonNull WebExtension extension) {
         Log.i("onInstallPrompt","onInstallPrompt");
         return GeckoResult.fromValue(AllowOrDeny.ALLOW);
