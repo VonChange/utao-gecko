@@ -131,6 +131,13 @@ public class MainBaseActivity extends Activity {
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+        // 回到前台时尝试请求一次画质列表
+        requestVideoQualityIfNeeded(true);
+    }
+
+    @Override
     protected void onStop() {
         super.onStop();
         unregisterAudioPlaybackMonitor();
@@ -482,6 +489,14 @@ public class MainBaseActivity extends Activity {
         exitDialogBinding.exitDialogContainer.setVisibility(View.VISIBLE);
         // render quality buttons if data present
         try { setupHzListInExit(); } catch (Throwable ignore) {}
+        // 若暂无数据，主动请求一次
+        if (isVideoQualityEmpty()) {
+            requestVideoQualityIfNeeded(false);
+            // 轻微延迟后刷新渲染
+            exitDialogBinding.hzListInExit.postDelayed(() -> {
+                try { setupHzListInExit(); } catch (Throwable ignore) {}
+            }, 600);
+        }
         // default focus
         exitDialogBinding.btnCancel.setFocusable(true);
         exitDialogBinding.btnCancel.post(() -> exitDialogBinding.btnCancel.requestFocus());
@@ -524,6 +539,9 @@ public class MainBaseActivity extends Activity {
                 if (action != null && action.trim().length() > 0) {
                     postMessage("js", action);
                 }
+                try {
+                    ToastUtils.show(this, "切换到 " + item.getName(), Toast.LENGTH_SHORT);
+                } catch (Throwable ignore) {}
             });
             // 焦点关系：左右在画质项之间切换；下到取消
             if (previousBtnId != View.NO_ID) {
@@ -550,6 +568,24 @@ public class MainBaseActivity extends Activity {
         try {
             if (session != null) {
                 session.loadUri("about:blank");
+            }
+        } catch (Throwable ignore) {}
+    }
+
+    private boolean isVideoQualityEmpty(){
+        if (videoQualityData == null) return true;
+        String s = videoQualityData.trim();
+        if (s.length()==0) return true;
+        if ("[]".equals(s) || "null".equalsIgnoreCase(s)) return true;
+        return false;
+    }
+
+    private void requestVideoQualityIfNeeded(boolean soft){
+        try {
+            // soft=true 仅在已为空时请求；soft=false 强制请求
+            if (!soft || isVideoQualityEmpty()) {
+                String js = "(function(){try{if(window._data&&_data.hzList){_data.hzList(window._tvFunc? _tvFunc.getVideo(): null);}else if(window._apiX){_apiX.msg('videoQuality',[]);} }catch(e){}})();";
+                postMessage("js", js);
             }
         } catch (Throwable ignore) {}
     }
