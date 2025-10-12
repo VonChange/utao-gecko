@@ -497,7 +497,7 @@ public class MainBaseActivity extends Activity {
         //showToastOrg(text,context);
     }
     private void setupProvinceButtons() {
-        binding.prevProvince.setOnClickListener(v -> {
+        binding.prevProvinceArea.setOnClickListener(v -> {
             currentProvinceIndex--;
             if (currentProvinceIndex < 0) {
                 currentProvinceIndex = provinces.size() - 1;
@@ -505,7 +505,7 @@ public class MainBaseActivity extends Activity {
             showCurrentProvince();
         });
 
-        binding.nextProvince.setOnClickListener(v -> {
+        binding.nextProvinceArea.setOnClickListener(v -> {
             currentProvinceIndex++;
             if (currentProvinceIndex >= provinces.size()) {
                 currentProvinceIndex = 0;

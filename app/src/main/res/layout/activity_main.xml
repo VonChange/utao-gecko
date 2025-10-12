@@ -67,58 +67,65 @@
                     android:layout_height="wrap_content"
                     android:orientation="vertical">
 
-                    <!-- 左右切换按钮区域 -->
+                    <!-- 第一栏布局：左右箭头区域包裹 + 居中省份名称 -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal">
+                        android:orientation="horizontal"
+                        android:background="#80000000">
 
-                        <Button
-                            android:id="@+id/prevProvince"
+                        <!-- 左半边区域（包含左箭头） -->
+                        <FrameLayout
+                            android:id="@+id/prevProvinceArea"
                             android:layout_width="0dp"
                             android:layout_height="48dp"
                             android:layout_weight="1"
-                            android:text="←"
-                            android:textSize="20sp"
-                            android:textColor="#FFFFFF"
-                            android:background="#80000000"
-                            android:focusable="false"/>
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:background="@android:color/transparent">
 
-                        <Button
-                            android:id="@+id/nextProvince"
-                            android:layout_width="0dp"
-                            android:layout_height="48dp"
-                            android:layout_weight="1"
-                            android:text="→"
-                            android:textSize="20sp"
-                            android:textColor="#FFFFFF"
-                            android:background="#80000000"
-                            android:focusable="false"/>
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="match_parent"
+                                android:layout_marginStart="16dp"
+                                android:gravity="center"
+                                android:text="←"
+                                android:textSize="20sp"
+                                android:textColor="#FFFFFF"/>
+                        </FrameLayout>
 
-                    </LinearLayout>
-
-                    <!-- 省份名称显示区域 -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:padding="8dp"
-                        android:gravity="center">
-
+                        <!-- 省份名称居中显示 -->
                         <TextView
                             android:id="@+id/provinceName"
                             android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
+                            android:layout_height="48dp"
+                            android:layout_marginStart="-50dp"
+                            android:layout_marginEnd="-50dp"
                             android:gravity="center"
                             android:textColor="#FFFFFF"
-                            android:textSize="20sp"/>
+                            android:textSize="20sp"
+                            android:clickable="false"/>
 
-                        <TextView
-                            android:id="@+id/provinceCount"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:gravity="center"
-                            android:textColor="#FFFFFF"
-                            android:textSize="16sp"/>
+                        <!-- 右半边区域（包含右箭头） -->
+                        <FrameLayout
+                            android:id="@+id/nextProvinceArea"
+                            android:layout_width="0dp"
+                            android:layout_height="48dp"
+                            android:layout_weight="1"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:background="@android:color/transparent">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="match_parent"
+                                android:layout_gravity="end"
+                                android:layout_marginEnd="16dp"
+                                android:gravity="center"
+                                android:text="→"
+                                android:textSize="20sp"
+                                android:textColor="#FFFFFF"/>
+                        </FrameLayout>
 
                     </LinearLayout>
 
