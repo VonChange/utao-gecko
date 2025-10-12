@@ -16,14 +16,35 @@
         android:focusableInTouchMode="true"
         android:descendantFocusability="afterDescendants">
 
-        <View
+        <LinearLayout
             android:id="@+id/dialogBackdrop"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="2"
             android:background="#80000000"
             android:clickable="true"
-            android:focusable="false" />
+            android:focusable="false"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:padding="16dp">
+
+            <ImageView
+                android:id="@+id/qrDonate"
+                android:layout_width="240dp"
+                android:layout_height="240dp"
+                android:contentDescription="打赏二维码"
+                android:scaleType="fitCenter"/>
+
+            <TextView
+                android:id="@+id/donateText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="随意打赏\n关注抖音utaotv 后续会发布新软"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:gravity="center"/>
+        </LinearLayout>
 
         <LinearLayout
             android:id="@+id/exitDialogContent"
@@ -55,6 +76,20 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:gravity="center">
+
+                <!-- 收藏按钮 -->
+                <Button
+                    android:id="@+id/btnFavorite"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:layout_marginBottom="12dp"
+                    android:text="收藏当前频道"
+                    android:textColor="#FFFFFF"
+                    android:textSize="18sp"
+                    android:background="@drawable/menu_button_background"
+                    android:focusable="true"
+                    android:focusableInTouchMode="true"
+                    android:clickable="true" />
 
                 <Button
                     android:id="@+id/btnCancel"

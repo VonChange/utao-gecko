@@ -294,8 +294,8 @@ public class MainBaseActivity extends Activity {
     private void initData() {
         // 使用异步任务加载数据
         new Thread(() -> {
-            // 在后台线程执行耗时操作
-            List<Live> result = UpdateService.getByLives();
+            // 在后台线程执行耗时操作（包含收藏栏目）
+            List<Live> result = UpdateService.getByLivesWithFavorites(this);
 
             // 在UI线程更新界面
             runOnUiThread(() -> {
@@ -497,11 +497,20 @@ public class MainBaseActivity extends Activity {
                 try { setupHzListInExit(); } catch (Throwable ignore) {}
             }, 600);
         }
+        // 更新收藏按钮文案
+        try { updateFavoriteButtonText(); } catch (Throwable ignore) {}
         // default focus
+        exitDialogBinding.btnFavorite.setFocusable(true);
         exitDialogBinding.btnCancel.setFocusable(true);
-        exitDialogBinding.btnCancel.post(() -> exitDialogBinding.btnCancel.requestFocus());
+        exitDialogBinding.btnFavorite.post(() -> exitDialogBinding.btnFavorite.requestFocus());
         exitDialogBinding.btnCancel.setOnClickListener(v -> hideExitDialog());
+        exitDialogBinding.btnFavorite.setOnClickListener(v -> toggleFavoriteCurrent());
         exitDialogBinding.dialogBackdrop.setOnClickListener(v -> hideExitDialog());
+        // 设置左侧二维码图片
+        try {
+            android.graphics.Bitmap bmp = android.graphics.BitmapFactory.decodeStream(getAssets().open("tv-web/img/myzsm.jpg"));
+            exitDialogBinding.qrDonate.setImageBitmap(bmp);
+        } catch (Throwable ignore) {}
     }
 
     private void hideExitDialog() {
@@ -553,15 +562,17 @@ public class MainBaseActivity extends Activity {
                     prev.setNextFocusRightId(thisId);
                 }
             }
-            btn.setNextFocusDownId(exitDialogBinding.btnCancel.getId());
+            btn.setNextFocusDownId(exitDialogBinding.btnFavorite.getId());
             if (firstBtnId == View.NO_ID) { firstBtnId = thisId; }
             previousBtnId = thisId;
             exitDialogBinding.hzListInExit.addView(btn);
         }
-        // 取消按钮上移回到第一项
+        // 焦点链：画质 -> 收藏 -> 取消；收藏上移到第一项
         if (firstBtnId != View.NO_ID) {
-            exitDialogBinding.btnCancel.setNextFocusUpId(firstBtnId);
+            exitDialogBinding.btnFavorite.setNextFocusUpId(firstBtnId);
         }
+        exitDialogBinding.btnFavorite.setNextFocusDownId(exitDialogBinding.btnCancel.getId());
+        exitDialogBinding.btnCancel.setNextFocusUpId(exitDialogBinding.btnFavorite.getId());
     }
 
     private void stopWebPlayback(){
@@ -588,6 +599,55 @@ public class MainBaseActivity extends Activity {
                 postMessage("js", js);
             }
         } catch (Throwable ignore) {}
+    }
+
+    // ================= 收藏（SharedPreferences: key=favorites, json list of urls） =================
+    private List<String> loadFavorites(){
+        try {
+            String json = ValueUtil.getString(this, "favorites", "[]");
+            List<String> list = JsonUtil.fromJson(json, new TypeToken<List<String>>(){}.getType());
+            return list == null ? new ArrayList<>() : list;
+        } catch (Throwable t){
+            return new ArrayList<>();
+        }
+    }
+
+    private void saveFavorites(List<String> list){
+        try {
+            String json = JsonUtil.toJson(list);
+            ValueUtil.putString(this, "favorites", json);
+        } catch (Throwable ignore) {}
+    }
+
+    private boolean isFavoriteUrl(String url){
+        if (url == null || url.trim().length()==0) return false;
+        List<String> list = loadFavorites();
+        for (String u : list){ if (url.equals(u)) return true; }
+        return false;
+    }
+
+    private void toggleFavoriteCurrent(){
+        if (currentLive == null || currentLive.getUrl() == null) return;
+        String url = currentLive.getUrl();
+        List<String> list = loadFavorites();
+        boolean exists = false;
+        for (int i=0;i<list.size();i++){
+            if (url.equals(list.get(i))){ exists = true; list.remove(i); break; }
+        }
+        if (!exists){ list.add(0, url); }
+        saveFavorites(list);
+        try {
+            updateFavoriteButtonText();
+            ToastUtils.show(this, exists? "已取消收藏" : "已收藏", Toast.LENGTH_SHORT);
+            // 重新加载栏目含收藏
+            initData();
+        } catch (Throwable ignore) {}
+    }
+
+    private void updateFavoriteButtonText(){
+        if (exitDialogBinding == null) return;
+        boolean isFav = currentLive != null && isFavoriteUrl(currentLive.getUrl());
+        exitDialogBinding.btnFavorite.setText(isFav ? "取消收藏" : "收藏当前频道");
     }
     // 在 Handler 对象中处理消息
     private Handler handler = new Handler(Looper.getMainLooper()) {
