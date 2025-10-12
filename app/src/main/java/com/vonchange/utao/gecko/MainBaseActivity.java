@@ -31,10 +31,13 @@ import androidx.databinding.DataBindingUtil;
 
 import com.vonchange.utao.gecko.api.ConfigApi;
 import com.vonchange.utao.gecko.databinding.ActivityMainBinding;
+import com.vonchange.utao.gecko.databinding.DialogExitBinding;
+import com.vonchange.utao.gecko.domain.HzItem;
 import com.vonchange.utao.gecko.domain.live.Live;
 import com.vonchange.utao.gecko.domain.live.Vod;
 import com.vonchange.utao.gecko.service.UpdateService;
 import com.vonchange.utao.gecko.util.LogUtil;
+import com.vonchange.utao.gecko.util.JsonUtil;
 import com.vonchange.utao.gecko.util.ToastUtils;
 import com.vonchange.utao.gecko.util.ValueUtil;
 
@@ -53,6 +56,7 @@ import java.lang.reflect.Method;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.List;
+import com.google.gson.reflect.TypeToken;
 
 public class MainBaseActivity extends Activity {
     private static String TAG="MainBaseActivity";
@@ -76,6 +80,11 @@ public class MainBaseActivity extends Activity {
     private AudioManager audioManager;
     private AudioManager.AudioPlaybackCallback audioPlaybackCallback;
     private MediaSession mediaSession;
+    // Exit dialog
+    private DialogExitBinding exitDialogBinding;
+    private boolean isExitDialogShowing = false;
+    // video quality data from extension
+    private String videoQualityData = null;
     //@SuppressLint("WrongThread")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -389,6 +398,19 @@ public class MainBaseActivity extends Activity {
         }
         int keyCode = event.getKeyCode();
         LogUtil.i("keyDown keyCode ", keyCode+" event" + event);
+        // 优先处理退出对话框，避免与上下左右快捷切台/菜单冲突
+        if (isExitDialogShowing) {
+            if (keyCode == KeyEvent.KEYCODE_BACK) {
+                finish();
+                return true;
+            }
+            if (keyCode == KeyEvent.KEYCODE_MENU || keyCode == KeyEvent.KEYCODE_TAB) {
+                hideExitDialog();
+                return true;
+            }
+            // 让系统处理上下左右与确认键的焦点切换
+            return super.dispatchKeyEvent(event);
+        }
         boolean isMenuShow=isMenuShow();
         if(isMenuShow){
             if(keyCode==KeyEvent.KEYCODE_BACK||keyCode==KeyEvent.KEYCODE_MENU||keyCode==KeyEvent.KEYCODE_TAB){
@@ -430,24 +452,86 @@ public class MainBaseActivity extends Activity {
             return goNext("up");
         }
         if (keyCode == KeyEvent.KEYCODE_BACK) {
-            keyBack();
+            // Show exit dialog instead of immediate exit
+            showExitDialog();
             return true;
         }
         return super.dispatchKeyEvent(event);
     }
-    private long mClickBackTime = 0;
-    private boolean keyBack(){
-        long currentTime = System.currentTimeMillis();
-        if (currentTime - mClickBackTime < 3000) {
-            //killAppProcess();
-            finish();
-            //super.onBackPressed();
-            System.exit(0);
-        } else {
-            Toast.makeText(this, "再按一次返回键退出", Toast.LENGTH_SHORT).show();
-            mClickBackTime = currentTime;
+    private void showExitDialog() {
+        if (exitDialogBinding == null) {
+            View dialogView = findViewById(R.id.exitDialog);
+            exitDialogBinding = DataBindingUtil.bind(dialogView);
         }
-        return true;
+        if (exitDialogBinding == null) {
+            return;
+        }
+        isExitDialogShowing = true;
+        exitDialogBinding.exitDialogContainer.setVisibility(View.VISIBLE);
+        // render quality buttons if data present
+        try { setupHzListInExit(); } catch (Throwable ignore) {}
+        // default focus
+        exitDialogBinding.btnCancel.setFocusable(true);
+        exitDialogBinding.btnCancel.post(() -> exitDialogBinding.btnCancel.requestFocus());
+        exitDialogBinding.btnCancel.setOnClickListener(v -> hideExitDialog());
+        exitDialogBinding.dialogBackdrop.setOnClickListener(v -> hideExitDialog());
+    }
+
+    private void hideExitDialog() {
+        if (exitDialogBinding != null) {
+            isExitDialogShowing = false;
+            exitDialogBinding.exitDialogContainer.setVisibility(View.GONE);
+        }
+    }
+
+    private void setupHzListInExit(){
+        if (exitDialogBinding == null) { return; }
+        exitDialogBinding.hzListInExit.removeAllViews();
+        exitDialogBinding.hzListInExit.setVisibility(View.GONE);
+        if (videoQualityData == null || videoQualityData.trim().length() == 0) { return; }
+        List<HzItem> hzItems = null;
+        try {
+            hzItems = JsonUtil.fromJson(videoQualityData, new TypeToken<List<HzItem>>(){}.getType());
+        } catch (Throwable ignore) { }
+        if (hzItems == null || hzItems.isEmpty()) { return; }
+        exitDialogBinding.hzListInExit.setVisibility(View.VISIBLE);
+        int previousBtnId = View.NO_ID;
+        int firstBtnId = View.NO_ID;
+        for (int i = 0; i < hzItems.size(); i++) {
+            HzItem item = hzItems.get(i);
+            Button btn = new Button(this);
+            btn.setText(item.getName());
+            btn.setTextColor(Color.WHITE);
+            btn.setTextSize(16);
+            btn.setPadding(24, 16, 24, 16);
+            btn.setBackgroundResource(R.drawable.menu_button_background);
+            int thisId = View.generateViewId();
+            btn.setId(thisId);
+            btn.setOnClickListener(v -> {
+                String action = item.getAction();
+                if (action != null && action.trim().length() > 0) {
+                    postMessage("js", action);
+                }
+            });
+            // 焦点关系：左右在画质项之间切换；下到取消
+            if (previousBtnId != View.NO_ID) {
+                btn.setNextFocusLeftId(previousBtnId);
+            }
+            if (previousBtnId != View.NO_ID) {
+                View prev = exitDialogBinding.hzListInExit.findViewById(previousBtnId);
+                if (prev != null) {
+                    prev.setNextFocusRightId(thisId);
+                }
+            }
+            btn.setNextFocusDownId(exitDialogBinding.btnCancel.getId());
+            if (firstBtnId == View.NO_ID) { firstBtnId = thisId; }
+            previousBtnId = thisId;
+            exitDialogBinding.hzListInExit.addView(btn);
+        }
+        // 取消按钮上移回到第一项
+        if (firstBtnId != View.NO_ID) {
+            exitDialogBinding.btnCancel.setNextFocusUpId(firstBtnId);
+        }
     }
     // 在 Handler 对象中处理消息
     private Handler handler = new Handler(Looper.getMainLooper()) {
@@ -570,7 +654,14 @@ public class MainBaseActivity extends Activity {
         }
     }
     protected  void message(String service,String data){
-
+        if("videoQuality".equals(service)){
+            videoQualityData = data;
+            if(isExitDialogShowing){
+                runOnUiThread(() -> {
+                    try { setupHzListInExit(); } catch (Throwable ignore) {}
+                });
+            }
+        }
     }
 
     private WebExtension.MessageDelegate initMessage() {

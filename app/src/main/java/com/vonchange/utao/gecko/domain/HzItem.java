@@ -5,6 +5,7 @@ public class HzItem {
     private String name;
     private  Boolean isVip;
     private Integer level;
+    private String action;
 
     public String getId() {
         return id;
@@ -36,5 +37,13 @@ public class HzItem {
 
     public void setLevel(Integer level) {
         this.level = level;
+    }
+
+    public String getAction() {
+        return action;
+    }
+
+    public void setAction(String action) {
+        this.action = action;
     }
 }

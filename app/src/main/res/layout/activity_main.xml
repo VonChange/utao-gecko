@@ -146,8 +146,9 @@
 
             </LinearLayout>
         </LinearLayout>
+        <!-- 退出对话框（Live 专用，去掉启动切换） -->
+        <include
+            android:id="@+id/exitDialog"
+            layout="@layout/dialog_exit" />
     </FrameLayout>
-
-
-
 </layout>
