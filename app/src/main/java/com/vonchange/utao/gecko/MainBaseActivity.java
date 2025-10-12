@@ -97,6 +97,10 @@ public class MainBaseActivity extends Activity {
         bind();
         ConfigApi.syncLogData(this);
         UpdateService.initTvData();
+        // 异步检查一周更新
+        new Thread(() -> {
+            try { UpdateService.refreshIfNeeded(this); } catch (Throwable ignore) {}
+        }).start();
         thisContext=this;
         audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
         setupAndroidMediaSession();
@@ -505,6 +509,17 @@ public class MainBaseActivity extends Activity {
         exitDialogBinding.btnFavorite.post(() -> exitDialogBinding.btnFavorite.requestFocus());
         exitDialogBinding.btnCancel.setOnClickListener(v -> hideExitDialog());
         exitDialogBinding.btnFavorite.setOnClickListener(v -> toggleFavoriteCurrent());
+        exitDialogBinding.btnRefreshNow.setOnClickListener(v -> {
+            new Thread(() -> {
+                boolean ok = UpdateService.refreshNow(this);
+                runOnUiThread(() -> {
+                    try {
+                        ToastUtils.show(this, ok? "更新成功" : "更新失败", Toast.LENGTH_SHORT);
+                        if (ok) { initData(); }
+                    } catch (Throwable ignore) {}
+                });
+            }).start();
+        });
         exitDialogBinding.dialogBackdrop.setOnClickListener(v -> hideExitDialog());
         // 设置左侧二维码图片
         try {

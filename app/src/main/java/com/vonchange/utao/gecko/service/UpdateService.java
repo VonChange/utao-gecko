@@ -9,6 +9,7 @@ import com.vonchange.utao.gecko.domain.live.Vod;
 import com.vonchange.utao.gecko.util.FileUtil;
 import com.vonchange.utao.gecko.util.JsonUtil;
 import com.vonchange.utao.gecko.util.ValueUtil;
+import com.vonchange.utao.gecko.util.HttpUtil;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -22,16 +23,32 @@ public class UpdateService {
 
     private static final  String TAG="UpdateService";
     public static String baseFolder;
+    private static final String PREF_TV_LIST = "tvList";
+    private static final String PREF_TV_LIST_TIME = "tvListTime";
+    private static final long ONE_WEEK_MS = 7L * 24 * 60 * 60 * 1000;
+    private static final String REMOTE_TV_URL = "http://qn.vonchange.com/utao/res/tv2.json";
     protected static Map<String, Vod> indexVodMap = new HashMap<>();
     protected static Map<Integer,Integer> tagMaxMap = new HashMap<>();
     protected static Map<String,String> urlKeyMap= new HashMap<>();
     protected static List<Live> newLives= new ArrayList<>();
     public static  void initTvData(){
-        String json= FileUtil.readAssert(MyApplication.getContext(),"tv-web/js/cctv/tv2.json");
-        if(json.trim().isEmpty()){
-            return;
+        Context ctx = MyApplication.getContext();
+        String json = ValueUtil.getString(ctx, PREF_TV_LIST, "");
+        if (json == null || json.trim().isEmpty()) {
+            json = FileUtil.readAssert(ctx,"tv-web/js/cctv/tv2.json");
+            if(json == null || json.trim().isEmpty()){
+                return;
+            }
+            // 首次写入本地数据到SP
+            ValueUtil.putString(ctx, PREF_TV_LIST, json);
+            ValueUtil.putLong(ctx, PREF_TV_LIST_TIME, System.currentTimeMillis());
         }
+        applyTvJson(json);
+    }
+
+    private static void applyTvJson(String json){
         DataWrapper<List<Live>> data = JsonUtil.fromJson(json,new TypeToken<DataWrapper<List<Live>>>(){}.getType());
+        if (data == null || data.getData() == null || data.getData().isEmpty()) { return; }
         List<Live> lives = data.getData();
         indexVodMap = new HashMap<>();
         tagMaxMap=new HashMap<>();
@@ -39,19 +56,55 @@ public class UpdateService {
         int i=0,j;
         for (Live life : lives) {
             j=0;
+            if (life.getVods()==null) { tagMaxMap.put(i,-1); i++; continue; }
             for (Vod vod : life.getVods()) {
                 vod.setTagIndex(i);
                 vod.setDetailIndex(j);
                 String key= i+"_"+j;
                 vod.setKey(key);
                 indexVodMap.put(key,vod);
-                urlKeyMap.put(vod.getUrl(),key);
+                if (vod.getUrl()!=null) { urlKeyMap.put(vod.getUrl(),key); }
                 j++;
             }
             tagMaxMap.put(i,j-1);
             i++;
         }
         newLives=lives;
+    }
+
+    // 启动时异步检查一周更新
+    public static boolean refreshIfNeeded(Context ctx){
+        try{
+            long last = ValueUtil.getLong(ctx, PREF_TV_LIST_TIME, 0);
+            long now = System.currentTimeMillis();
+            if (now - last < ONE_WEEK_MS){
+                android.util.Log.i(TAG, "refreshIfNeeded: within one week, skip");
+                return false;
+            }
+            android.util.Log.i(TAG, "refreshIfNeeded: last="+last+" now="+now+" diff="+(now-last));
+            return refreshNow(ctx);
+        }catch (Throwable ignore){ return false; }
+    }
+
+    // 立即拉取更新（测试按钮）
+    public static boolean refreshNow(Context ctx){
+        try{
+            android.util.Log.i(TAG, "refreshNow: requesting "+REMOTE_TV_URL+" (http)");
+            String json = HttpUtil.getJson(REMOTE_TV_URL, null);
+            android.util.Log.i(TAG, "refreshNow: rawLen="+(json==null? -1 : json.length()));
+            if (json == null || json.length()<10 || (!json.trim().startsWith("{"))) { return false; }
+            DataWrapper<List<Live>> data = JsonUtil.fromJson(json,new TypeToken<DataWrapper<List<Live>>>(){}.getType());
+            if (data == null || data.getData() == null || data.getData().isEmpty()) {
+                android.util.Log.e(TAG, "refreshNow: parsed data empty");
+                return false; }
+            ValueUtil.putString(ctx, PREF_TV_LIST, json);
+            ValueUtil.putLong(ctx, PREF_TV_LIST_TIME, System.currentTimeMillis());
+            applyTvJson(json);
+            android.util.Log.i(TAG, "refreshNow: success, saved to SP and applied. size="+data.getData().size());
+            return true;
+        }catch (Throwable t){
+            android.util.Log.e(TAG, "refreshNow: exception "+t.getClass()+" "+t.getMessage());
+            return false; }
     }
     public static List<Live> getByLives(){
         return newLives;

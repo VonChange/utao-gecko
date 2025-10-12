@@ -63,6 +63,19 @@
                 android:layout_width="match_parent"
                 android:layout_height="16dp" />
 
+            <!-- 顶部：立即更新按钮（测试） -->
+            <Button
+                android:id="@+id/btnRefreshNow"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:layout_marginBottom="12dp"
+                android:text="立即更新频道列表"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:background="@drawable/menu_button_background"
+                android:focusable="true"
+                android:clickable="true" />
+
             <!-- 画质列表（简化版） -->
             <LinearLayout
                 android:id="@+id/hzListInExit"
