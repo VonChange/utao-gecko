@@ -141,6 +141,16 @@ public class MainBaseActivity extends Activity {
     protected void onDestroy() {
         super.onDestroy();
         unregisterAudioPlaybackMonitor();
+        // 停止网页播放并释放会话
+        stopWebPlayback();
+        try {
+            if (view != null) {
+                view.setSession(null);
+            }
+            if (session != null) {
+                session.close();
+            }
+        } catch (Throwable ignore) {}
         if (mediaSession != null) {
             mediaSession.setActive(false);
             mediaSession.release();
@@ -401,6 +411,8 @@ public class MainBaseActivity extends Activity {
         // 优先处理退出对话框，避免与上下左右快捷切台/菜单冲突
         if (isExitDialogShowing) {
             if (keyCode == KeyEvent.KEYCODE_BACK) {
+                // 退出前停止播放
+                stopWebPlayback();
                 finish();
                 return true;
             }
@@ -532,6 +544,14 @@ public class MainBaseActivity extends Activity {
         if (firstBtnId != View.NO_ID) {
             exitDialogBinding.btnCancel.setNextFocusUpId(firstBtnId);
         }
+    }
+
+    private void stopWebPlayback(){
+        try {
+            if (session != null) {
+                session.loadUri("about:blank");
+            }
+        } catch (Throwable ignore) {}
     }
     // 在 Handler 对象中处理消息
     private Handler handler = new Handler(Looper.getMainLooper()) {
