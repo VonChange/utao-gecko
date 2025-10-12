@@ -6,6 +6,11 @@ import android.content.pm.ActivityInfo;
 import android.content.res.AssetManager;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.os.Build;
+import android.media.AudioManager;
+import android.media.AudioPlaybackConfiguration;
+import android.media.session.MediaSession;
+import android.media.session.PlaybackState;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
@@ -68,6 +73,9 @@ public class MainBaseActivity extends Activity {
     private int currentProvinceIndex = 0;
     private static boolean isMenuShow=false;
     private static String  baseUrl;
+    private AudioManager audioManager;
+    private AudioManager.AudioPlaybackCallback audioPlaybackCallback;
+    private MediaSession mediaSession;
     //@SuppressLint("WrongThread")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -81,6 +89,8 @@ public class MainBaseActivity extends Activity {
         ConfigApi.syncLogData(this);
         UpdateService.initTvData();
         thisContext=this;
+        audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+        setupAndroidMediaSession();
         if(null==currentLive){
             currentLive = currentChannel(this);
             //UpdateService.getByKey("0_0");
@@ -104,6 +114,29 @@ public class MainBaseActivity extends Activity {
         //extension.setMessageDelegate(messageDelegate, "browser"),
         //file://android_asset/index.html resource://android/assets/tv-web/index.html
        // session.loadUri(webExtension.metaData.baseUrl+"index.html"); // Or any other URL...
+    }
+    @Override
+    protected void onStart() {
+        super.onStart();
+        registerAudioPlaybackMonitor();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        unregisterAudioPlaybackMonitor();
+        updatePlaybackState(false, PlaybackState.PLAYBACK_POSITION_UNKNOWN);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        unregisterAudioPlaybackMonitor();
+        if (mediaSession != null) {
+            mediaSession.setActive(false);
+            mediaSession.release();
+            mediaSession = null;
+        }
     }
     private void progress(){
         session.setProgressDelegate(new GeckoSession.ProgressDelegate() {
@@ -147,6 +180,70 @@ public class MainBaseActivity extends Activity {
                 }
             }
         });
+    }
+    private void setupAndroidMediaSession() {
+        mediaSession = new MediaSession(this, "GeckoWebPlayer");
+        mediaSession.setFlags(MediaSession.FLAG_HANDLES_MEDIA_BUTTONS | MediaSession.FLAG_HANDLES_TRANSPORT_CONTROLS);
+        mediaSession.setActive(false);
+    }
+
+    private void updatePlaybackState(boolean isPlaying, long positionMs) {
+        int state = isPlaying ? PlaybackState.STATE_PLAYING : PlaybackState.STATE_PAUSED;
+        PlaybackState.Builder builder = new PlaybackState.Builder()
+                .setActions(
+                        PlaybackState.ACTION_PLAY |
+                        PlaybackState.ACTION_PAUSE |
+                        PlaybackState.ACTION_PLAY_PAUSE |
+                        PlaybackState.ACTION_STOP |
+                        PlaybackState.ACTION_SEEK_TO
+                )
+                .setState(state, positionMs, isPlaying ? 1f : 0f);
+        if (mediaSession != null) {
+            mediaSession.setPlaybackState(builder.build());
+            mediaSession.setActive(isPlaying);
+        }
+        if (isPlaying) {
+            getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        } else {
+            getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        }
+    }
+
+    private void registerAudioPlaybackMonitor() {
+        if (audioManager == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+            return;
+        }
+        if (audioPlaybackCallback != null) {
+            // already registered
+            return;
+        }
+        audioPlaybackCallback = new AudioManager.AudioPlaybackCallback() {
+            @Override
+            public void onPlaybackConfigChanged(java.util.List<AudioPlaybackConfiguration> configs) {
+                boolean active = false;
+                try { active = audioManager != null && audioManager.isMusicActive(); } catch (Throwable ignore) {}
+                updatePlaybackState(active, PlaybackState.PLAYBACK_POSITION_UNKNOWN);
+            }
+        };
+        try {
+            audioManager.registerAudioPlaybackCallback(audioPlaybackCallback, new android.os.Handler(android.os.Looper.getMainLooper()));
+        } catch (Throwable t) {
+            Log.w(TAG, "registerAudioPlaybackCallback failed", t);
+        }
+    }
+
+    private void unregisterAudioPlaybackMonitor() {
+        if (audioManager == null || audioPlaybackCallback == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+            audioPlaybackCallback = null;
+            return;
+        }
+        try {
+            audioManager.unregisterAudioPlaybackCallback(audioPlaybackCallback);
+        } catch (Throwable t) {
+            Log.w(TAG, "unregisterAudioPlaybackCallback failed", t);
+        } finally {
+            audioPlaybackCallback = null;
+        }
     }
     public static Vod currentChannel(Context context){
         String tvUrl=  ValueUtil.getString(context,"tvUrl");
