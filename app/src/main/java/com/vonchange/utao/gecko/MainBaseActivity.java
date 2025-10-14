@@ -327,6 +327,20 @@ public class MainBaseActivity extends Activity {
         Live currentProvince = provinces.get(currentProvinceIndex);
         binding.provinceName.setText(currentProvince.getName() + "(" + currentProvince.getVods().size() + ")");
         setupChannelList(currentProvince.getVods());
+        // 渲染完成后，将焦点与选中项指向当前频道
+        try {
+            if (currentLive != null && currentLive.getTagIndex() == currentProvinceIndex) {
+                int idx = Math.max(0, currentLive.getDetailIndex());
+                if (binding.channelList.getAdapter() != null && binding.channelList.getCount() > 0) {
+                    if (idx >= binding.channelList.getCount()) { idx = binding.channelList.getCount() - 1; }
+                    final int finalIdx = idx;
+                    binding.channelList.post(() -> {
+                        binding.channelList.setSelection(finalIdx);
+                        binding.channelList.requestFocus();
+                    });
+                }
+            }
+        } catch (Throwable ignore) {}
     }
     private void setupChannelList(List<Vod> channels) {
         ArrayAdapter<Vod> adapter = new ArrayAdapter<Vod>(this, android.R.layout.simple_list_item_1, channels) {
@@ -402,13 +416,24 @@ public class MainBaseActivity extends Activity {
     protected void showMenu() {
         binding.menuContainer.setVisibility(View.VISIBLE);
         isMenuShow = true;
+        // 将省份定位到当前播放的省份
+        try {
+            if (currentLive != null) {
+                currentProvinceIndex = currentLive.getTagIndex();
+            }
+        } catch (Throwable ignore) {}
         showCurrentProvince();
         setupProvinceButtons();
-        // 默认选中第一个频道
-        if (binding.channelList.getAdapter() != null && binding.channelList.getCount() > 0) {
-            binding.channelList.setSelection(0);
-            binding.channelList.requestFocus();
-        }
+        // 将列表焦点与选中项定位到当前频道
+        try {
+            int sel = 0;
+            if (currentLive != null) { sel = Math.max(0, currentLive.getDetailIndex()); }
+            if (binding.channelList.getAdapter() != null && binding.channelList.getCount() > 0) {
+                if (sel >= binding.channelList.getCount()) { sel = binding.channelList.getCount() - 1; }
+                binding.channelList.setSelection(sel);
+                binding.channelList.requestFocus();
+            }
+        } catch (Throwable ignore) {}
 
         // 点击空白处关闭菜单
         binding.menuContainer.setOnClickListener(v -> hideMenu());
