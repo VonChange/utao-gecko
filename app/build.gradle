@@ -41,9 +41,7 @@ android {
         targetSdk 28
         versionCode 7
         versionName "2025年10月14日"
-        ndk {
-            abiFilters "armeabi-v7a" //"armeabi-v7a","x86" arm64-v8a ""armeabi-v7a"// arm64-v8a、armeabi-v7a、x86_64、x86 中的一个或多个
-        }
+        // ABI 分包由 splits 控制
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         javaCompileOptions {
             annotationProcessorOptions {
@@ -75,12 +73,41 @@ android {
     buildFeatures {
         viewBinding true
     }
-    android.applicationVariants.all {
-        variant ->
-            variant.outputs.all {
-                // 此处指定生成的apk文件名
-                outputFileName = "utao-fox.apk"
+    // 针对ABI分别打包：armeabi-v7a、x86
+    splits {
+        abi {
+            enable true
+            reset()
+            include 'armeabi-v7a', 'x86'
+            universalApk false
+        }
+    }
+
+    // 重命名输出：
+    // release 使用中文名：utao火狐版安卓5以上-<versionName>-<abi>.apk
+    // debug 使用纯英文名，且不包含 versionName（用 versionCode 代替），避免中文导致的ADB/文件系统问题
+    android.applicationVariants.all { variant ->
+        variant.outputs.all { output ->
+            def abiFilter = null
+            try {
+                abiFilter = output.getFilter(com.android.build.OutputFile.ABI)
+            } catch (Throwable ignore) {}
+            def abiName = (abiFilter == null) ? "universal" : (abiFilter.contains('x86') ? 'x86' : 'v7a')
+            def isRelease = variant.buildType.name == 'release'
+            if (isRelease) {
+                if (abiName == 'x86') {
+                    outputFileName = "utao火狐版PC模拟器专用-${variant.versionName}-x86.apk"
+                } else {
+                    outputFileName = "utao火狐版安卓5以上-${variant.versionName}-v7a.apk"
+                }
+            } else {
+                if (abiName == 'x86') {
+                    outputFileName = "utao-fox-debug-pc-${variant.versionCode}-x86.apk"
+                } else {
+                    outputFileName = "utao-fox-debug-${variant.versionCode}-v7a.apk"
+                }
             }
+        }
     }
 }
 dependencies {
