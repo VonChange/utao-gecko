@@ -8,7 +8,25 @@ let initPlayer=function (){
         console.log(data);
         if(data&&data.trim()!==""){
             playUrl=data;
-            _apiX.msgStr("videoUrl",playUrl);
+            const config = {
+                "id": "mse",
+                "url": data,
+                "hlsOpts": {
+                    xhrSetup: function(xhr, url) {
+                       // xhr.setRequestHeader('tv-ref', 'https://www.sctv.com/');
+                    }
+                },
+                "playsinline": true,
+                "plugins": [],
+                "isLive": true,
+                "autoplay": true,
+                volume: 1,
+                "width": "100%",
+                "height": "100%"
+            }
+            //config.plugins.push(HlsPlayer);
+//config.plugins.push(FlvPlayer)
+            player = new HlsJsPlayer(config);
         }
     });
    /* fetch("http://api.vonchange.com/utao/sctv?tag="+tag)

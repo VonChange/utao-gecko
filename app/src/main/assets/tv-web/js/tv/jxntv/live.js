@@ -13,7 +13,25 @@ let initPlayer=function (){
         if(data&&data.trim()!==""){
             let dataObj=JSON.parse(data);
             playUrl=urlTrue+`?source=pc&t=${dataObj.t}&token=${dataObj.token}&uuid=0f501604605d`;
-            _apiX.msgStr("videoUrl",playUrl);
+            const config = {
+                "id": "mse",
+                "url": playUrl,
+                "hlsOpts": {
+                    xhrSetup: function(xhr, url) {
+                       // xhr.setRequestHeader('tv-ref', 'https://www.sctv.com/');
+                    }
+                },
+                "playsinline": true,
+                "plugins": [],
+                "isLive": true,
+                "autoplay": true,
+                volume: 1,
+                "width": "100%",
+                "height": "100%"
+            }
+            //config.plugins.push(HlsPlayer);
+//config.plugins.push(FlvPlayer)
+            player = new HlsJsPlayer(config);
         }
     });
 }
