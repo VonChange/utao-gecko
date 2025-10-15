@@ -1,0 +1,43 @@
+{
+    "manifest_version": 2,
+    "name": "油桃投屏TV端",
+    "version": "1.0.5",
+    "description": "utao tv",
+    "content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self'",
+    "browser_specific_settings": {
+      "gecko": {
+        "id": "vonchange@163.com"
+      }
+    },
+    "content_scripts": [
+      {
+        "matches": ["<all_urls>"],
+        "js": ["js/zepto.min.js","js/base.js","js/load_detail_tv.js"],
+        "run_at": "document_end"
+      },
+      {
+        "matches": ["<all_urls>"],
+        "css": ["css/begin.css"],
+        "run_at": "document_start"
+      }
+    ],
+    "permissions": [
+      "webRequest",
+      "webRequestBlocking",
+      "storage",
+      "<all_urls>",
+      "nativeMessaging",
+      "nativeMessagingFromContent",
+      "geckoViewAddons"
+    ],
+    "background": {
+      "scripts": ["js/background.js"]
+    },
+   "web_accessible_resources": [
+        "css/*",
+        "js/*",
+       "iconfont/iconfont.woff2",
+       "index.html",
+       "cctv.html"
+   ]
+  }
