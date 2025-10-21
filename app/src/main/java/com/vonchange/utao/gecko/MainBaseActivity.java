@@ -327,20 +327,22 @@ public class MainBaseActivity extends Activity {
         Live currentProvince = provinces.get(currentProvinceIndex);
         binding.provinceName.setText(currentProvince.getName() + "(" + currentProvince.getVods().size() + ")");
         setupChannelList(currentProvince.getVods());
-        // 渲染完成后，将焦点与选中项指向当前频道
-        try {
-            if (currentLive != null && currentLive.getTagIndex() == currentProvinceIndex) {
-                int idx = Math.max(0, currentLive.getDetailIndex());
-                if (binding.channelList.getAdapter() != null && binding.channelList.getCount() > 0) {
-                    if (idx >= binding.channelList.getCount()) { idx = binding.channelList.getCount() - 1; }
-                    final int finalIdx = idx;
-                    binding.channelList.post(() -> {
-                        binding.channelList.setSelection(finalIdx);
-                        binding.channelList.requestFocus();
-                    });
-                }
-            }
-        } catch (Throwable ignore) {}
+		// 渲染完成后，将焦点与选中项指向当前频道（当退出对话框未显示时）
+		if (!isExitDialogShowing) {
+			try {
+				if (currentLive != null && currentLive.getTagIndex() == currentProvinceIndex) {
+					int idx = Math.max(0, currentLive.getDetailIndex());
+					if (binding.channelList.getAdapter() != null && binding.channelList.getCount() > 0) {
+						if (idx >= binding.channelList.getCount()) { idx = binding.channelList.getCount() - 1; }
+						final int finalIdx = idx;
+						binding.channelList.post(() -> {
+							binding.channelList.setSelection(finalIdx);
+							binding.channelList.requestFocus();
+						});
+					}
+				}
+			} catch (Throwable ignore) {}
+		}
     }
     private void setupChannelList(List<Vod> channels) {
         ArrayAdapter<Vod> adapter = new ArrayAdapter<Vod>(this, android.R.layout.simple_list_item_1, channels) {
@@ -533,7 +535,11 @@ public class MainBaseActivity extends Activity {
         exitDialogBinding.btnCancel.setFocusable(true);
         exitDialogBinding.btnFavorite.post(() -> exitDialogBinding.btnFavorite.requestFocus());
         exitDialogBinding.btnCancel.setOnClickListener(v -> hideExitDialog());
-        exitDialogBinding.btnFavorite.setOnClickListener(v -> toggleFavoriteCurrent());
+		exitDialogBinding.btnFavorite.setOnClickListener(v -> {
+			toggleFavoriteCurrent();
+			// 点击后恢复焦点到收藏按钮，避免被列表抢走
+			exitDialogBinding.btnFavorite.post(() -> exitDialogBinding.btnFavorite.requestFocus());
+		});
         exitDialogBinding.btnRefreshNow.setOnClickListener(v -> {
             new Thread(() -> {
                 boolean ok = UpdateService.refreshNow(this);
@@ -581,6 +587,7 @@ public class MainBaseActivity extends Activity {
             btn.setTextSize(16);
             btn.setPadding(24, 16, 24, 16);
             btn.setBackgroundResource(R.drawable.menu_button_background);
+			btn.setFocusable(true);
             int thisId = View.generateViewId();
             btn.setId(thisId);
             btn.setOnClickListener(v -> {
@@ -591,6 +598,8 @@ public class MainBaseActivity extends Activity {
                 try {
                     ToastUtils.show(this, "切换到 " + item.getName(), Toast.LENGTH_SHORT);
                 } catch (Throwable ignore) {}
+				// 点击后保持焦点在当前按钮
+				v.post(() -> v.requestFocus());
             });
             // 焦点关系：左右在画质项之间切换；下到取消
             if (previousBtnId != View.NO_ID) {
