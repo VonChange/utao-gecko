@@ -4,7 +4,7 @@ let tag =  _tvFunc.getQueryParams()["tag"];
 //api.vonchange.com
 let playUrl=null;
 let initPlayer=function (){
-    _apiX.getJson("http://api.vonchange.com/utao/sctv?tag="+tag,   { "User-Agent": _apiX.userAgent(false), "tv-ref": "http://api.vonchange.com" },function(data){
+    _apiX.getHtml("http://api.vonchange.com/utao/sctv?tag="+tag,   { "User-Agent": _apiX.userAgent(false), "tv-ref": "http://api.vonchange.com" },function(data){
         console.log(data);
         if(data&&data.trim()!==""){
             playUrl=data;
@@ -13,7 +13,7 @@ let initPlayer=function (){
                 "url": data,
                 "hlsOpts": {
                     xhrSetup: function(xhr, url) {
-                       // xhr.setRequestHeader('tv-ref', 'https://www.sctv.com/');
+                        xhr.setRequestHeader('tv-ref', 'https://www.sctv.com/');
                     }
                 },
                 "playsinline": true,
