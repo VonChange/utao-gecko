@@ -64,8 +64,7 @@ $$(function (){
             if(utaoLoc){
                 console.log("utaoLoc",utaoLoc,url);
                 if(url==utaoLoc){
-                    _apiX.msgStr("videoUrl",sessionStorage.getItem("u-m3u8"));
-                    //window.location.href=extractDomain(utaoLoc)+"/tv-web/live.html?url="+sessionStorage.getItem("u-m3u8");
+                    window.location.href=extractDomain(utaoLoc)+"/tv-web/live.html?url="+sessionStorage.getItem("u-m3u8");
                     return true
                 }
             }
