@@ -15,7 +15,8 @@ ext{
     //79.0.20200813192915 89.0.20210614221319(可自动播放16 声音自动) 99.0.20220411174855  109.0.20230127170202
     //115.0.20230726201356 117.0.20230912013654 118.0.20231009140911(自动播放Override不一样 最高4.1)
     //119.0.20231108221453(21)  119.0.20231016204538(21) 130.0.20240913135723 140.0.20250616215311 139.0.20250609112858
-    geckoviewVersion = "141.0.20250714153642"
+    //141.0.20250714153642 143.0.20250929153833
+    geckoviewVersion = "143.0.20250929153833"
     rxhttp_version = "3.2.6"
     okhttp_version = "3.12.13"
     room_version = "2.6.1"
@@ -39,8 +40,8 @@ android {
         minSdk 21
         //noinspection ExpiredTargetSdkVersion 16 28
         targetSdk 28
-        versionCode 7
-        versionName "2025年10月14日"
+        versionCode 8
+        versionName "2025年10月21日"
         // ABI 分包由 splits 控制
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         javaCompileOptions {

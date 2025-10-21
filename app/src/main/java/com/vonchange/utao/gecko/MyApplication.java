@@ -29,8 +29,6 @@ public class MyApplication extends Application {
             androidId=getUUID();
         }
         androidId="0"+androidId;
-        CrashHandler.getInstance().init(this);
-        CrashHandler.uploadExceptionToServer(this);
     }
     public static Context getContext() {
         return context;
@@ -40,7 +38,49 @@ public class MyApplication extends Application {
     public void onCreate() {
         super.onCreate();
         context = getApplicationContext();
+        allErrorCatch();
+        CrashHandler.getInstance().init(this);
+        CrashHandler.uploadExceptionToServer(this);
         //preInitWebView();
+    }
+
+    private void allErrorCatch(){
+        final Thread.UncaughtExceptionHandler systemDefault = Thread.getDefaultUncaughtExceptionHandler();
+        Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
+            @Override
+            public void uncaughtException(Thread thread, Throwable throwable) {
+                // 检查是否为 SurfaceTexture 相关异常
+                if (throwable != null && throwable.getMessage() != null &&
+                        (throwable instanceof NullPointerException) &&
+                        (throwable.getStackTrace() != null && throwable.getStackTrace().length > 0 &&
+                                containsSurfaceTextureInStackTrace(throwable.getStackTrace()))) {
+
+                    Log.e("Application", "捕获到 SurfaceTexture 相关异常: " + throwable.getMessage());
+
+                    // 记录非致命异常但不终止应用
+                    CrashHandler.recordNonFatal(getApplicationContext(), throwable);
+                    return;
+                }
+
+                // 其他异常，交给系统默认处理器，避免递归
+                if (systemDefault != null) {
+                    systemDefault.uncaughtException(thread, throwable);
+                } else {
+                    android.os.Process.killProcess(android.os.Process.myPid());
+                }
+            }
+
+            // 检查堆栈跟踪是否包含 SurfaceTexture 相关内容
+            private boolean containsSurfaceTextureInStackTrace(StackTraceElement[] stackTrace) {
+                for (StackTraceElement element : stackTrace) {
+                    if (element.getClassName().contains("SurfaceTexture") ||
+                            element.getMethodName().contains("SurfaceTexture")) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+        });
     }
     public static String getUUID() {
         String serial = null;

@@ -37,6 +37,7 @@ public class CrashHandler implements UncaughtExceptionHandler {
      * 文件名
      */
     public static final String FILE_NAME = "crash";
+    private boolean mIsHandling = false; // 防止重入
     /**
      * 异常日志 存储位置为根目录下的 Crash文件夹
      */
@@ -74,6 +75,22 @@ public class CrashHandler implements UncaughtExceptionHandler {
 
     }
 
+    /**
+     * 记录非致命异常：写入本地，不终止进程
+     */
+    public static void recordNonFatal(Context context, Throwable e) {
+        try {
+            CrashHandler handler = getInstance();
+            if (handler.mContext == null && context != null) {
+                handler.mContext = context.getApplicationContext();
+            }
+            String path = handler.dumpExceptionToSDCard(e);
+            ValueUtil.putString(handler.mContext, "errorLog", path);
+            ValueUtil.putString(handler.mContext, "errorLogRead", "0");
+        } catch (Exception ignore) {
+        }
+    }
+
 
     /**
      * 这个是最关键的函数，当系统中有未被捕获的异常，系统将会自动调用 uncaughtException 方法
@@ -83,16 +100,20 @@ public class CrashHandler implements UncaughtExceptionHandler {
      */
     @Override
     public void uncaughtException(Thread thread, Throwable ex) {
+        if (mIsHandling) {
+            if (mDefaultCrashHandler != null) {
+                mDefaultCrashHandler.uncaughtException(thread, ex);
+            }
+            return;
+        }
+        mIsHandling = true;
 
         //导入异常信息到SD卡中
         try {
-            String path= dumpExceptionToSDCard(ex);
-            Log.e("PATH",path);
-            ValueUtil.putString(mContext,"errorLog",path);
-            ValueUtil.putString(mContext,"errorLogRead","0");
-           //String error=  dumpExceptionToStr(ex);
-            //这里可以上传异常信息到服务器，便于开发人员分析日志从而解决Bug
-           // uploadExceptionToServer(error);
+            String path = dumpExceptionToSDCard(ex);
+            Log.e("PATH", path);
+            ValueUtil.putString(mContext, "errorLog", path);
+            ValueUtil.putString(mContext, "errorLogRead", "0");
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -104,7 +125,6 @@ public class CrashHandler implements UncaughtExceptionHandler {
         } else {
             Process.killProcess(Process.myPid());
         }
-
     }
 
     private String dumpExceptionToStr(Throwable e){
@@ -170,6 +190,7 @@ public class CrashHandler implements UncaughtExceptionHandler {
         return path;
     }
 
+
     /**
      * 获取手机各项信息
      * @param pw
@@ -189,7 +210,7 @@ public class CrashHandler implements UncaughtExceptionHandler {
         pw.print("SYS API: ");
         pw.println(androidId+" "+num+ " "+ api);
         pw.print("App Version: ");
-        pw.print(pi.versionName);
+        pw.print("Fox_"+pi.versionName);
         pw.print("_");
         pw.println(pi.versionCode);
         //写入 Android 版本号
@@ -217,31 +238,44 @@ public class CrashHandler implements UncaughtExceptionHandler {
      * 将错误信息上传至服务器
      */
     public static void uploadExceptionToServer(Context context)  {
-        //Log.e("ERORRR",content);
-        //HttpUtil.postJson("http://api.vonchange.com/utao/error",null,content);
-        //String body=  HttpRequest.post("http://api.vonchange.com/utao/error").send(content).body();
-       // Log.e("body",body);
-       String errorRead=  ValueUtil.getString(context,"errorLogRead");
-       if("0".equals(errorRead)){
-          String path=  ValueUtil.getString(context,"errorLog");
-           String errLog=null;
-          try{
-               errLog=  FileUtil.getStringFromInputStream(new FileInputStream(new File(path)));
-          }catch (Exception e){
-               errLog=null;
-          }
-          if(null==errLog){
-              return;
-          }
-           Log.e("errLog",errLog);
-           String finalErrLog = errLog;
-           new Thread(()->{
-               //HttpRequest.post("http://api.vonchange.com/utao/error").send(finalErrLog).body();
+        Context app = context.getApplicationContext();
+        File dir = app.getFilesDir();
+        File[] files = dir.listFiles((d, name) -> name != null && name.startsWith(FILE_NAME) && name.endsWith(FILE_NAME_SUFFIX));
+        if (files == null || files.length == 0) {
+            return;
+        }
 
-               HttpUtil.postJson("http://api.vonchange.com/utao/error",null, finalErrLog);
-               Log.i("POST","http://api.vonchange.com/utao/error");
-               ValueUtil.putString(context,"errorLogRead","1");
-           }).start();
-       }
+
+        new Thread(() -> {
+            for (File f : files) {
+                String errLog = null;
+                try {
+                    errLog = FileUtil.getStringFromInputStream(new FileInputStream(f));
+                } catch (Exception ignored) {
+                    errLog = null;
+                }
+                if (errLog == null || errLog.isEmpty()) {
+                    continue;
+                }
+
+                try {
+                    HttpUtil.postJson("http://api.vonchange.com/utao/error", null, errLog);
+                    Log.i("POST", "http://api.vonchange.com/utao/error");
+                    // 成功后删除该文件
+                    //noinspection ResultOfMethodCallIgnored
+                    f.delete();
+                } catch (Exception uploadErr) {
+                    Log.e("CrashUpload", "upload failed: " + uploadErr.getMessage());
+                    // 失败不删除，等待下次重试
+                }
+            }
+
+            // 目录中若已无 crash 文件，置为已读
+            File[] left = dir.listFiles((d, name) -> name != null && name.startsWith(FILE_NAME) && name.endsWith(FILE_NAME_SUFFIX));
+            if (left == null || left.length == 0) {
+                ValueUtil.putString(app, "errorLogRead", "1");
+                ValueUtil.putString(app, "errorLog", "");
+            }
+        }).start();
     }
 }
