@@ -128,16 +128,16 @@ public class UpdateService {
         favoriteLive.setName("收藏");
         favoriteLive.setTag("favorite");
         favoriteLive.setVods(favUrls);
-
-        combined.addAll(newLives);
         // 修复：将收藏栏插入到第一栏（仅当有数据时）
         if (favUrls != null && !favUrls.isEmpty()) {
             favoriteLive.setIndex(0);
-            combined.add(0, favoriteLive);
+            combined.add(favoriteLive);
         }
+        combined.addAll(newLives);
+
 
         // rebuild maps to include favorites for navigation
-//        rebuildMaps(combined);
+        rebuildMaps(combined);
         return combined;
     }
 

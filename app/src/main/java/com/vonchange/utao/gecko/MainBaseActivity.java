@@ -86,6 +86,13 @@ public class MainBaseActivity extends Activity {
     private boolean isExitDialogShowing = false;
     // video quality data from extension
     private String videoQualityData = null;
+    // 数字键输入缓冲：用于多位数字跳转收藏台
+    private final StringBuilder digitBuffer = new StringBuilder();
+    private final Handler digitHandler = new Handler(Looper.getMainLooper());
+    private final Runnable digitCommitRunnable = new Runnable() {
+        @Override
+        public void run() { commitDigitInput(); }
+    };
     //@SuppressLint("WrongThread")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -112,7 +119,9 @@ public class MainBaseActivity extends Activity {
         audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
         setupAndroidMediaSession();
         if(null==currentLive){
+            Log.i(TAG, "onCreate: reading history tvUrl from SP=" + ValueUtil.getString(this,"tvUrl"));
             currentLive = currentChannel(this);
+            Log.i(TAG, "onCreate: currentChannel -> " + (currentLive==null ? "null" : (currentLive.getName()+" url="+currentLive.getUrl()+" key="+currentLive.getKey())));
             //UpdateService.getByKey("0_0");
         }
         if(null==currentLive){
@@ -286,21 +295,27 @@ public class MainBaseActivity extends Activity {
     }
     public static Vod currentChannel(Context context){
         String tvUrl=  ValueUtil.getString(context,"tvUrl");
+        Log.i(TAG, "currentChannel: read tvUrl=" + tvUrl);
         if(null==tvUrl){
+            Log.i(TAG, "currentChannel: tvUrl is null, fallback key=0_0");
             return UpdateService.getByKey("0_0");
         }
         Vod vod= UpdateService.getByUrl(tvUrl);
         if(null==vod){
+            Log.i(TAG, "currentChannel: not found by url, fallback key=0_0");
             return UpdateService.getByKey("0_0");
         }
+        Log.i(TAG, "currentChannel: resolved -> name=" + vod.getName() + " key=" + vod.getKey() + " url=" + vod.getUrl());
         return vod;
     }
     public static void updateChannel(Context context, String url){
+        Log.i(TAG, "updateChannel: request save url=" + url);
         Vod vod = UpdateService.getByUrl(url);
         if(null==vod||null==vod.getUrl()){
+            Log.e(TAG, "updateChannel: vod null or url null, skip save");
             return;
         }
-        LogUtil.i(TAG,vod.getName()+vod.getUrl());
+        Log.i(TAG, "updateChannel: save -> name=" + vod.getName() + " key=" + vod.getKey() + " url=" + vod.getUrl());
         ValueUtil.putString(context,"tvUrl",vod.getUrl());
     }
 
@@ -382,7 +397,17 @@ public class MainBaseActivity extends Activity {
 
                 Vod channel = getItem(position);
                 if (channel != null) {
-                    btn.setText(channel.getName());
+                    // 收藏栏前缀数字索引（1-based）
+                    boolean isFavorites = false;
+                    try {
+                        Live currentProvince = provinces.get(currentProvinceIndex);
+                        isFavorites = currentProvince != null && "favorite".equals(currentProvince.getTag());
+                    } catch (Throwable ignore) {}
+                    String name = channel.getName();
+                    if (isFavorites) {
+                        name = (position + 1) + ". " + (name == null ? "" : name);
+                    }
+                    btn.setText(name);
                 }
 
                 return btn;
@@ -470,6 +495,13 @@ public class MainBaseActivity extends Activity {
             // 让系统处理上下左右与确认键的焦点切换
             return super.dispatchKeyEvent(event);
         }
+        // 数字键：收集多位数字，延时执行跳转到收藏台
+        if (event.getAction() == KeyEvent.ACTION_DOWN) {
+            if (keyCode >= KeyEvent.KEYCODE_0 && keyCode <= KeyEvent.KEYCODE_9) {
+                handleDigitKey(keyCode);
+                return true;
+            }
+        }
         boolean isMenuShow=isMenuShow();
         if(isMenuShow){
             if(keyCode==KeyEvent.KEYCODE_BACK||keyCode==KeyEvent.KEYCODE_MENU||keyCode==KeyEvent.KEYCODE_TAB){
@@ -516,6 +548,73 @@ public class MainBaseActivity extends Activity {
             return true;
         }
         return super.dispatchKeyEvent(event);
+    }
+
+    // 数字键处理：收集输入并启动定时提交
+    private void handleDigitKey(int keyCode) {
+        int d = keyCode - KeyEvent.KEYCODE_0; // 0..9
+        digitBuffer.append(d);
+        // 重置计时器，600ms后提交
+        digitHandler.removeCallbacks(digitCommitRunnable);
+        digitHandler.postDelayed(digitCommitRunnable, 600);
+    }
+
+    // 提交数字输入：解析并跳转到收藏第 N 台
+    private void commitDigitInput() {
+        try {
+            if (digitBuffer.length() == 0) return;
+            int oneBased = Integer.parseInt(digitBuffer.toString());
+            digitBuffer.setLength(0);
+            jumpToFavoriteIndex(oneBased);
+        } catch (Throwable ignore) {
+            digitBuffer.setLength(0);
+        }
+    }
+
+    // 跳转到收藏栏第 oneBased 台并直接播放
+    private void jumpToFavoriteIndex(int oneBased) {
+        if (provinces == null || provinces.isEmpty()) return;
+        int favTagIdx = findFavoritesTagIndex();
+        if (favTagIdx < 0 || favTagIdx >= provinces.size()) return;
+        Live fav = provinces.get(favTagIdx);
+        if (fav == null || fav.getVods() == null || fav.getVods().isEmpty()) return;
+        int zeroBased = oneBased - 1;
+        if (zeroBased < 0 || zeroBased >= fav.getVods().size()) return;
+
+        Vod channel = fav.getVods().get(zeroBased);
+        if (channel == null || channel.getUrl() == null) return;
+
+        // 切到收藏栏并播放该台
+        currentProvinceIndex = favTagIdx;
+        currentLive = channel;
+        showCurrentProvince();
+
+        // 播放并更新历史
+        runOnUiThread(() -> {
+            try {
+                LogUtil.i(TAG, "Loading URL in WebView: " + channel.getUrl());
+                loadUrl(channel.getUrl());
+                LogUtil.i(TAG, "URL loaded successfully");
+            } catch (Exception e) {
+                LogUtil.e(TAG, "Error loading URL in WebView: " + e.getMessage());
+            }
+        });
+        updateChannel(thisContext, channel.getUrl());
+        showToast(channel.getName(), this);
+        hideMenu();
+    }
+
+    // 查找收藏栏所在的栏目索引（优先 tag=favorite，否则兜底 0）
+    private int findFavoritesTagIndex() {
+        if (provinces == null) return -1;
+        for (int i = 0; i < provinces.size(); i++) {
+            Live l = provinces.get(i);
+            if (l != null && "favorite".equals(l.getTag())) {
+                return i;
+            }
+        }
+        // 如果没有设置 tag，则默认第一栏为收藏
+        return 0;
     }
     private void showExitDialog() {
         if (exitDialogBinding == null) {
@@ -757,10 +856,15 @@ public class MainBaseActivity extends Activity {
     private boolean goNext(String nextType){
         if(null==currentLive){
             currentLive = UpdateService.getByKey("0_0");
+            Log.i(TAG, "goNext: currentLive was null, set default 0_0");
         }
         String key= UpdateService.liveNext(currentLive.getTagIndex(),currentLive.getDetailIndex(),nextType);
+        Log.i(TAG, "goNext: nextType=" + nextType + " -> key=" + key);
         currentLive = UpdateService.getByKey(key);
         if(null!=currentLive){
+            Log.i(TAG, "goNext: switched -> name=" + currentLive.getName() + " url=" + currentLive.getUrl() + " key=" + currentLive.getKey());
+            // 记录历史，确保退出重进能定位到最近频道
+            updateChannel(thisContext, currentLive.getUrl());
             //延迟1s
             showToast(currentLive.getName(),this);
             String liveKey=currentLive.getKey();
