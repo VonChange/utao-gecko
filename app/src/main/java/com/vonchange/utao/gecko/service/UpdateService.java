@@ -82,7 +82,12 @@ public class UpdateService {
                 return false;
             }
             android.util.Log.i(TAG, "refreshIfNeeded: last="+last+" now="+now+" diff="+(now-last));
-            return refreshNow(ctx);
+            boolean refreshed = refreshNow(ctx);
+            if (refreshed) {
+                // 刷新后重建包含收藏的索引映射，保证收藏 URL 可解析
+                try { getByLivesWithFavorites(ctx); } catch (Throwable ignore) {}
+            }
+            return refreshed;
         }catch (Throwable ignore){ return false; }
     }
 
@@ -100,6 +105,8 @@ public class UpdateService {
             ValueUtil.putString(ctx, PREF_TV_LIST, json);
             ValueUtil.putLong(ctx, PREF_TV_LIST_TIME, System.currentTimeMillis());
             applyTvJson(json);
+            // 立即重建包含收藏的索引，避免映射仅基础数据导致历史收藏无法解析
+            try { getByLivesWithFavorites(ctx); } catch (Throwable ignore) {}
             android.util.Log.i(TAG, "refreshNow: success, saved to SP and applied. size="+data.getData().size());
             return true;
         }catch (Throwable t){
@@ -110,50 +117,27 @@ public class UpdateService {
         return newLives;
     }
     public static List<Live> getByLivesWithFavorites(Context context){
-        List<Live> combined = new ArrayList<>(newLives);
-        try {
-            String favJson = ValueUtil.getString(context, "favorites", "[]");
-            List<String> favUrls = JsonUtil.fromJson(favJson, new TypeToken<List<String>>(){}.getType());
-            if (favUrls != null && !favUrls.isEmpty()) {
-                Live favoriteLive = new Live();
-                favoriteLive.setName("我的收藏");
-                favoriteLive.setTag("favorite");
-                int tagIndex = combined.size();
-                favoriteLive.setIndex(tagIndex);
-                List<Vod> favoriteVods = new ArrayList<>();
-                int j = 0;
-                for (String url : favUrls) {
-                    if (url == null || url.trim().isEmpty()) { continue; }
-                    Vod base = getByUrl(url);
-                    Vod vod = new Vod();
-                    if (base != null) {
-                        vod.setName("❤" + base.getName());
-                    } else {
-                        vod.setName("❤收藏");
-                    }
-                    String useUrl = url;
-                    if (useUrl.contains("?")) {
-                        if (!useUrl.contains("usave=")) { useUrl = useUrl + "&usave=1"; }
-                    } else {
-                        useUrl = useUrl + "?usave=1";
-                    }
-                    vod.setUrl(useUrl);
-                    vod.setTagIndex(tagIndex);
-                    vod.setDetailIndex(j);
-                    String key = tagIndex + "_" + j;
-                    vod.setKey(key);
-                    favoriteVods.add(vod);
-                    j++;
-                }
-                if (!favoriteVods.isEmpty()) {
-                    favoriteLive.setVods(favoriteVods);
-                    combined.add(favoriteLive);
-                }
-            }
-        } catch (Throwable ignore) {}
+        List<Live> combined = new ArrayList<>();
+        String favJson = ValueUtil.getString(context, "favorites", "[]");
+        List<Vod> favUrls=new ArrayList<>();
+        try{
+            favUrls = JsonUtil.fromJson(favJson, new TypeToken<List<Vod>>(){}.getType());
+        }catch (Exception e){
+        }
+        Live favoriteLive = new Live();
+        favoriteLive.setName("收藏");
+        favoriteLive.setTag("favorite");
+        favoriteLive.setVods(favUrls);
+
+        combined.addAll(newLives);
+        // 修复：将收藏栏插入到第一栏（仅当有数据时）
+        if (favUrls != null && !favUrls.isEmpty()) {
+            favoriteLive.setIndex(0);
+            combined.add(0, favoriteLive);
+        }
 
         // rebuild maps to include favorites for navigation
-        rebuildMaps(combined);
+//        rebuildMaps(combined);
         return combined;
     }
 
@@ -180,7 +164,7 @@ public class UpdateService {
             tagMaxMap.put(i, j - 1);
             i++;
         }
-        newLives = lives;
+        // 仅重建索引映射，不覆盖基础频道数据，避免将“我的收藏”持久并重复追加
     }
     public static Vod getByKey(String key){
         return indexVodMap.get(key);

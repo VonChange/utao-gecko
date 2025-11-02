@@ -1,16 +1,17 @@
 package com.vonchange.utao.gecko;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.content.pm.ActivityInfo;
 import android.content.res.AssetManager;
 import android.graphics.Color;
-import android.os.Bundle;
-import android.os.Build;
 import android.media.AudioManager;
 import android.media.AudioPlaybackConfiguration;
 import android.media.session.MediaSession;
 import android.media.session.PlaybackState;
+import android.os.Build;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
@@ -29,6 +30,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.databinding.DataBindingUtil;
 
+import com.google.gson.reflect.TypeToken;
 import com.vonchange.utao.gecko.api.ConfigApi;
 import com.vonchange.utao.gecko.databinding.ActivityMainBinding;
 import com.vonchange.utao.gecko.databinding.DialogExitBinding;
@@ -36,8 +38,8 @@ import com.vonchange.utao.gecko.domain.HzItem;
 import com.vonchange.utao.gecko.domain.live.Live;
 import com.vonchange.utao.gecko.domain.live.Vod;
 import com.vonchange.utao.gecko.service.UpdateService;
-import com.vonchange.utao.gecko.util.LogUtil;
 import com.vonchange.utao.gecko.util.JsonUtil;
+import com.vonchange.utao.gecko.util.LogUtil;
 import com.vonchange.utao.gecko.util.ToastUtils;
 import com.vonchange.utao.gecko.util.ValueUtil;
 
@@ -56,7 +58,6 @@ import java.lang.reflect.Method;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.List;
-import com.google.gson.reflect.TypeToken;
 
 public class MainBaseActivity extends Activity {
     private static String TAG="MainBaseActivity";
@@ -97,9 +98,15 @@ public class MainBaseActivity extends Activity {
         bind();
         ConfigApi.syncLogData(this);
         UpdateService.initTvData();
+        // 预先构建含收藏的索引，保证历史 usave=1 可定位到收藏栏
+        try { UpdateService.getByLivesWithFavorites(this); } catch (Throwable ignore) {}
         // 异步检查一周更新
         new Thread(() -> {
-            try { UpdateService.refreshIfNeeded(this); } catch (Throwable ignore) {}
+            try {
+                UpdateService.refreshIfNeeded(this);
+                // 刷新后索引可能被基础数据覆盖，再次构建收藏映射
+                UpdateService.getByLivesWithFavorites(this);
+            } catch (Throwable ignore) {}
         }).start();
         thisContext=this;
         audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
@@ -239,6 +246,7 @@ public class MainBaseActivity extends Activity {
         }
     }
 
+    @SuppressLint("NewApi")
     private void registerAudioPlaybackMonitor() {
         if (audioManager == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
             return;
@@ -262,6 +270,7 @@ public class MainBaseActivity extends Activity {
         }
     }
 
+    @SuppressLint("NewApi")
     private void unregisterAudioPlaybackMonitor() {
         if (audioManager == null || audioPlaybackCallback == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
             audioPlaybackCallback = null;
@@ -651,43 +660,62 @@ public class MainBaseActivity extends Activity {
     }
 
     // ================= 收藏（SharedPreferences: key=favorites, json list of urls） =================
-    private List<String> loadFavorites(){
+    private List<Vod> loadFavorites(){
         try {
             String json = ValueUtil.getString(this, "favorites", "[]");
-            List<String> list = JsonUtil.fromJson(json, new TypeToken<List<String>>(){}.getType());
+            List<Vod> list = JsonUtil.fromJson(json, new TypeToken<List<Vod>>(){}.getType());
             return list == null ? new ArrayList<>() : list;
         } catch (Throwable t){
             return new ArrayList<>();
         }
     }
 
-    private void saveFavorites(List<String> list){
+    private void saveFavorites(List<Vod> list){
         try {
             String json = JsonUtil.toJson(list);
             ValueUtil.putString(this, "favorites", json);
         } catch (Throwable ignore) {}
     }
-
-    private boolean isFavoriteUrl(String url){
-        if (url == null || url.trim().length()==0) return false;
-        List<String> list = loadFavorites();
-        for (String u : list){ if (url.equals(u)) return true; }
-        return false;
+    private String favUrl(String url){
+        if(url.contains("?")){
+            return  url +"&usave=1";
+        }
+        return url+"?usave=1";
+    }
+    private String checkFavUrl(String url){
+        if(url.contains("usave=1")){
+            return url;
+        }
+        return favUrl(url);
+    }
+    private int isFavoriteUrl(String url){
+        if (url == null || url.trim().isEmpty()) return -1;
+        url=checkFavUrl(url);
+        List<Vod> list = loadFavorites();
+        for (int i = 0; i < list.size(); i++) {
+            if (url.equals(list.get(i).getUrl())) return i;
+        }
+        return -1;
     }
 
+    private Vod  favVod(Vod vod){
+        Vod vodNew = new Vod();
+        vodNew.setName("♥"+vod.getName());
+        vodNew.setUrl(favUrl(vod.getUrl()));
+        return vodNew;
+    }
     private void toggleFavoriteCurrent(){
         if (currentLive == null || currentLive.getUrl() == null) return;
         String url = currentLive.getUrl();
-        List<String> list = loadFavorites();
-        boolean exists = false;
-        for (int i=0;i<list.size();i++){
-            if (url.equals(list.get(i))){ exists = true; list.remove(i); break; }
+        List<Vod> list = loadFavorites();
+        int favIndex = isFavoriteUrl(url);
+        if (favIndex==-1){ list.add(favVod(currentLive)); } else{
+            list.remove(favIndex);
         }
-        if (!exists){ list.add(0, url); }
         saveFavorites(list);
         try {
             updateFavoriteButtonText();
-            ToastUtils.show(this, exists? "已取消收藏" : "已收藏", Toast.LENGTH_SHORT);
+            ToastUtils.show(this, favIndex!=-1? "已取消收藏" : "已收藏", Toast.LENGTH_SHORT);
             // 重新加载栏目含收藏
             initData();
         } catch (Throwable ignore) {}
@@ -695,7 +723,7 @@ public class MainBaseActivity extends Activity {
 
     private void updateFavoriteButtonText(){
         if (exitDialogBinding == null) return;
-        boolean isFav = currentLive != null && isFavoriteUrl(currentLive.getUrl());
+        boolean isFav = currentLive != null && (isFavoriteUrl(currentLive.getUrl())!=-1);
         exitDialogBinding.btnFavorite.setText(isFav ? "取消收藏" : "收藏当前频道");
     }
     // 在 Handler 对象中处理消息
