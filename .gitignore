@@ -1,6 +1,10 @@
 *.iml
 .gradle
 .idea
+# 密钥库文件（敏感信息）
+/keystore/
+*.jks
+*.keystore
 /app/release
 /local.properties
 /.idea/caches

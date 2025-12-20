@@ -10,6 +10,14 @@ buildscript {
 plugins {
     alias(libs.plugins.android.application)
 }
+
+// 从 local.properties 读取签名配置
+def keystorePropertiesFile = rootProject.file("local.properties")
+def keystoreProperties = new Properties()
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
 ext{
     geckoviewChannel = ""
     //-armeabi-v7a
@@ -26,6 +34,16 @@ ext{
 android {
     namespace 'com.vonchange.utao.gecko'
     compileSdk 35
+
+    // 签名配置（从 local.properties 读取）
+    signingConfigs {
+        release {
+            storeFile file(keystoreProperties['RELEASE_STORE_FILE'] ?: "../keystore/vonchangeAPK.jks")
+            storePassword keystoreProperties['RELEASE_STORE_PASSWORD'] ?: ""
+            keyAlias keystoreProperties['RELEASE_KEY_ALIAS'] ?: "vonchangeAPK"
+            keyPassword keystoreProperties['RELEASE_KEY_PASSWORD'] ?: ""
+        }
+    }
     configurations {
         all {
             //exclude group: 'com.android.support', module: 'support-v4'
@@ -41,8 +59,8 @@ android {
         minSdk 21
         //noinspection ExpiredTargetSdkVersion 16 28
         targetSdk 28
-        versionCode 9
-        versionName "2025年10月30日"
+        versionCode 10
+        versionName "2025年11月02日"
         // ABI 分包由 splits 控制
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         javaCompileOptions {
@@ -64,6 +82,7 @@ android {
 
     buildTypes {
         release {
+            signingConfig signingConfigs.release
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
